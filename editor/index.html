@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spirit Set Editor</title>
+<style>
+:root {
+  --bg: #f4f6f8; --panel: #ffffff; --ink: #14202b; --muted: #5b6b78; --line: #d9e0e6;
+  --accent: #1f7a8c; --accent-ink: #ffffff; --ok: #237a4b; --warn: #9a6400; --err: #b42318;
+  --field: #ffffff; --chip: #e9eef2;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0c1218; --panel: #121b23; --ink: #e3ebf1; --muted: #8fa1ae; --line: #22313d;
+    --accent: #5cc8d8; --accent-ink: #062027; --ok: #5ccf8e; --warn: #f0b552; --err: #ff7b6e;
+    --field: #0f171e; --chip: #1b2833;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { position: sticky; top: 0; z-index: 2; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+header h1 { font-size: 16px; margin: 0 8px 0 0; }
+#status { color: var(--muted); font-size: 13px; }
+#status.dirty { color: var(--warn); }
+.spacer { flex: 1; }
+button, .btn { font: inherit; border: 1px solid var(--line); background: var(--chip); color: var(--ink);
+  border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button.ghost { background: transparent; }
+button.small { padding: 2px 8px; font-size: 12px; }
+.layout { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 54px); }
+nav { border-right: 1px solid var(--line); padding: 12px 8px; background: var(--panel); }
+nav a { display: flex; justify-content: space-between; padding: 6px 10px; border-radius: 6px; color: var(--ink); text-decoration: none; }
+nav a.active { background: var(--chip); font-weight: 600; }
+nav .group { margin: 12px 10px 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+main { padding: 20px 24px 60px; max-width: 1200px; }
+h2 { margin: 0 0 4px; font-size: 20px; }
+.sub { color: var(--muted); margin: 0 0 16px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+.card h3 { margin: 0 0 12px; font-size: 15px; display: flex; gap: 8px; align-items: center; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+input, textarea, select { font: inherit; color: var(--ink); background: var(--field); border: 1px solid var(--line);
+  border-radius: 6px; padding: 6px 8px; min-width: 0; }
+input[type=color] { padding: 2px; height: 32px; width: 48px; }
+textarea { min-height: 70px; resize: vertical; }
+input.bad { border-color: var(--err); }
+.ro { color: var(--muted); font-family: ui-monospace, Consolas, monospace; font-size: 12px; padding-top: 6px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }
+td input { width: 100%; }
+.tag { font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--chip); color: var(--muted); white-space: nowrap; }
+.tag.ok { color: var(--ok); } .tag.warn { color: var(--warn); } .tag.err { color: var(--err); }
+.swatches { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
+.swatch-preview { width: 64px; height: 64px; border-radius: 50%; border: 1px solid var(--line); }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+pre { white-space: pre-wrap; background: var(--field); border: 1px solid var(--line); border-radius: 8px; padding: 12px; max-height: 60vh; overflow: auto; font-size: 12px; }
+.issues li { margin: 2px 0; }
+.issues .err { color: var(--err); } .issues .warn { color: var(--warn); }
+@media (max-width: 760px) {
+  .layout { grid-template-columns: 1fr; }
+  nav { border-right: 0; border-bottom: 1px solid var(--line); display: flex; overflow-x: auto; gap: 4px; }
+  nav .group { display: none; }
+  main { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Spirit Set Editor</h1>
+  <span id="status">Loading…</span>
+  <span class="spacer"></span>
+  <span id="issueCount" class="tag"></span>
+  <label class="btn" style="flex-direction:row">Import JSON<input id="importFile" type="file" accept=".json,application/json" hidden></label>
+  <button id="exportBtn">Export JSON</button>
+  <button id="saveBtn" class="primary">Save</button>
+</header>
+<div class="layout">
+  <nav id="nav"></nav>
+  <main id="main"></main>
+</div>
+
+<datalist id="dl-costumes"></datalist>
+<datalist id="dl-petpowers"></datalist>
+<datalist id="dl-icons"></datalist>
+<datalist id="dl-fx"></datalist>
+<datalist id="dl-classes"></datalist>
+<datalist id="dl-ai"></datalist>
+
+<script>
+const NUM_FIELDS = [
+  ["RechargeTime", "Recharge (s)"], ["EnduranceCost", "Endurance"], ["Range", "Range (ft)"],
+  ["Accuracy", "Accuracy"], ["TimeToActivate", "Cast time (s)"]
+];
+const PART_FIELDS = ["Geometry", "Texture1", "Texture2", "Color1", "Color2", "Fx"];
+const IDENT = /^[A-Za-z][A-Za-z0-9_]*$/;
+
+let spec = null, catalog = {}, sets = {}, dirty = false, view = "set";
+
+const $ = (s, el = document) => el.querySelector(s);
+const h = (tag, attrs = {}, ...kids) => {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") el.className = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else if (v !== undefined && v !== null && v !== false) el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat()) if (kid != null) el.append(kid.nodeType ? kid : String(kid));
+  return el;
+};
+
+function markDirty() {
+  dirty = true;
+  $("#status").textContent = "Unsaved changes";
+  $("#status").className = "dirty";
+  refreshIssues();
+}
+
+// Text/number input bound to obj[key]. Empty input deletes the key when `optional`.
+function field(label, obj, key, opts = {}) {
+  const input = h("input", {
+    type: opts.type || "text", list: opts.list, placeholder: opts.placeholder ?? "",
+    step: opts.step, value: obj[key] ?? "", readonly: opts.readonly
+  });
+  const tag = opts.tag ? h("span") : null;
+  const check = () => {
+    const v = input.value.trim();
+    const bad = opts.ident && v && !IDENT.test(v);
+    input.classList.toggle("bad", !!bad);
+    if (tag) { const t = opts.tag(v); tag.className = "tag " + (t?.[0] || ""); tag.textContent = t?.[1] || ""; }
+  };
+  input.addEventListener("input", () => {
+    const v = input.value.trim();
+    if (v === "" && opts.optional) delete obj[key];
+    else obj[key] = opts.type === "number" && v !== "" ? Number(v) : input.value;
+    check(); markDirty(); opts.onchange?.();
+  });
+  check();
+  return h("label", {}, h("span", { class: "row" }, label, tag), input);
+}
+
+function area(label, obj, key) {
+  const t = h("textarea", {}, obj[key] ?? "");
+  t.addEventListener("input", () => { obj[key] = t.value; markDirty(); });
+  return h("label", {}, label, t);
+}
+
+const hexToRgb = hex => { const n = parseInt(hex.slice(1), 16); return `${n >> 16 & 255}, ${n >> 8 & 255}, ${n & 255}`; };
+const rgbToHex = rgb => {
+  const m = String(rgb || "").match(/(\d+)\D+(\d+)\D+(\d+)/);
+  return m ? "#" + m.slice(1).map(x => (+x).toString(16).padStart(2, "0")).join("") : "#ffffff";
+};
+
+// Color picker with an on/off switch; off means "keep the source costume's color".
+function colorField(label, obj, key, { asRgb = false } = {}) {
+  const has = () => !!obj[key];
+  const toHex = () => asRgb ? rgbToHex(obj[key]) : (obj[key] || "#ffffff");
+  const picker = h("input", { type: "color", value: toHex() });
+  const on = h("input", { type: "checkbox" });
+  on.checked = has();
+  picker.disabled = !has();
+  picker.addEventListener("input", () => { obj[key] = asRgb ? hexToRgb(picker.value) : picker.value; markDirty(); renderPreview(); });
+  on.addEventListener("change", () => {
+    picker.disabled = !on.checked;
+    if (on.checked) obj[key] = asRgb ? hexToRgb(picker.value) : picker.value; else obj[key] = asRgb ? undefined : "";
+    if (asRgb && !on.checked) delete obj[key];
+    markDirty(); renderPreview();
+  });
+  return h("label", {}, label, h("span", { class: "row" }, on, picker));
+}
+
+let renderPreview = () => {};
+
+const costumeTag = v => !v ? null : catalog.costumes?.has(v) ? ["ok", "in client"] : ["warn", "custom / not in client"];
+const powerTag = v => !v ? null : catalog.powers?.has(v) ? ["ok", "in client"] : ["warn", "not in client"];
+const fxTag = v => !v ? null : catalog.fx?.has(v) ? ["ok", "in client"] : ["warn", "custom fx"];
+
+// ---------- views ----------
+function viewSet() {
+  const s = spec.set;
+  return [
+    h("h2", {}, "Power set"),
+    h("p", { class: "sub" }, `Cloned from ${spec.template.category}.${spec.template.set}. Internal names must be letters, digits and underscores.`),
+    h("div", { class: "card" },
+      h("div", { class: "grid" },
+        field("Internal name", s, "name", { ident: true }),
+        field("Display name", s, "display"),
+        field("Short help", s, "short_help")),
+      h("div", { style: "margin-top:12px" }, area("Description", s, "help"))),
+    h("div", { class: "card" },
+      h("h3", {}, "Notes"),
+      area("Design notes (stays in the spec, not in the game)", spec.meta, "notes"))
+  ];
+}
+
+function viewPowers() {
+  const rows = spec.powers.map(p => {
+    p.fields ??= {};
+    const extra = Object.keys(p.fields).filter(k => !NUM_FIELDS.some(([f]) => f === k));
+    return h("div", { class: "card" },
+      h("h3", {}, p.display || p.name, h("span", { class: "tag" }, `from ${p.template}`)),
+      h("div", { class: "grid" },
+        field("Internal name", p, "name", { ident: true }),
+        field("Display name", p, "display"),
+        field("Short help", p, "short_help"),
+        field("Icon", p, "icon", { list: "dl-icons", placeholder: "keep template icon" })),
+      h("div", { class: "grid", style: "margin-top:12px" },
+        NUM_FIELDS.map(([k, label]) => field(label, p.fields, k, { type: "number", step: "any", optional: true, placeholder: "template" }))),
+      extraFields(p.fields, extra));
+  });
+  return [h("h2", {}, "Powers"),
+    h("p", { class: "sub" }, "Blank numbers keep the template's value. Field names are the maintainers' textparser names; run the generator's --probe on their tree to confirm."),
+    rows];
+}
+
+function extraFields(fields, keys) {
+  const wrap = h("div", { style: "margin-top:12px" });
+  const draw = () => {
+    wrap.replaceChildren(
+      ...Object.keys(fields).filter(k => !NUM_FIELDS.some(([f]) => f === k)).map(k =>
+        h("div", { class: "row", style: "margin-bottom:6px" },
+          h("span", { class: "ro" }, k),
+          (() => { const i = h("input", { value: fields[k] }); i.addEventListener("input", () => { fields[k] = i.value; markDirty(); }); return i; })(),
+          h("button", { class: "small ghost", onclick: () => { delete fields[k]; markDirty(); draw(); } }, "remove"))),
+      h("button", { class: "small", onclick: () => {
+        const k = prompt("Field name (exactly as in the .powers file)");
+        if (k && IDENT.test(k)) { fields[k] = ""; markDirty(); draw(); }
+      } }, "+ other field"));
+  };
+  draw();
+  return wrap;
+}
+
+function viewPet(pet) {
+  pet.villain_fields ??= {};
+  const kitPrefix = `${spec.template.pet_category}.${pet.template_kit}`;
+  const out = [
+    h("h2", {}, pet.label),
+    h("p", { class: "sub" }, pet.tier ? `Tier ${pet.tier} henchman, cloned from ${pet.template_villain}.` : `Spawned by ${spec.powers.find(p => p.template === "Soul_Extraction")?.display || "Soul Extraction"}; cloned from ${pet.template_villain}.`),
+    h("div", { class: "card" },
+      h("h3", {}, "Henchman"),
+      h("div", { class: "grid" },
+        field("Label (editor only)", pet, "label", { onchange: renderNav }),
+        field("Villain def name", pet, "villain", { ident: true }),
+        pet.summon_power ? field(`Count per ${pet.summon_power}`, pet, "count", { type: "number", step: 1 }) : null,
+        pet.kit ? field("Power kit name", pet, "kit", { ident: true }) : null,
+        field("Class", pet.villain_fields, "Class", { list: "dl-classes", optional: true, placeholder: "template class" }),
+        field("AI config", pet.villain_fields, "AIConfig", { list: "dl-ai", optional: true, placeholder: "template AI" })))
+  ];
+  if (pet.template_kit) out.push(kitCard(pet, kitPrefix));
+  pet.costumes.forEach((c, i) => out.push(costumeCard(pet, c, i)));
+  out.push(h("button", { onclick: () => {
+    pet.costumes.push({ name: `${pet.costumes[0]?.name || "Spirit"}_${pet.costumes.length + 1}`, replaces: "", from: pet.costumes[0]?.from || "", fields: {}, tint: { primary: "", secondary: "" }, parts: [] });
+    markDirty(); render();
+  } }, "+ costume variant"));
+  return out;
+}
+
+function kitCard(pet, kitPrefix) {
+  pet.kit_overrides ??= [];
+  const body = h("tbody");
+  const draw = () => body.replaceChildren(...pet.kit_overrides.map((o, i) => h("tr", {},
+    h("td", {}, field("", o, "template", { list: "dl-petpowers", tag: powerTag, placeholder: `${kitPrefix}.…` })),
+    h("td", {}, field("", o, "name", { ident: true, placeholder: "keep name" })),
+    h("td", {}, field("", o, "from", { list: "dl-petpowers", tag: powerTag, placeholder: "keep template body" })),
+    h("td", {}, h("button", { class: "small ghost", onclick: () => { pet.kit_overrides.splice(i, 1); markDirty(); draw(); } }, "remove")))));
+  draw();
+  return h("div", { class: "card" },
+    h("h3", {}, "Power kit", h("span", { class: "tag" }, `${kitPrefix}, _2, _3 → ${spec.template.pet_category}.${pet.kit}…`)),
+    h("p", { class: "sub" }, "Every template kit power is cloned. Override one to rename it or take its body from another power (for example the ghost attacks)."),
+    h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "Template power"), h("th", {}, "New name"), h("th", {}, "Take body from"), h("th"))), body),
+    h("button", { class: "small", onclick: () => { pet.kit_overrides.push({ template: "", name: "", from: "" }); markDirty(); draw(); } }, "+ override"));
+}
+
+function costumeCard(pet, c, idx) {
+  c.fields ??= {}; c.tint ??= { primary: "", secondary: "" }; c.parts ??= [];
+  const preview = h("div", { class: "swatch-preview" });
+  const paint = () => {
+    const a = c.tint.primary || "#cfd8dc", b = c.tint.secondary || "#455a64";
+    preview.style.background = `radial-gradient(circle at 35% 30%, ${a} 0 35%, ${b} 80%)`;
+  };
+  paint();
+  const partsBody = h("div");
+  const drawParts = () => partsBody.replaceChildren(...c.parts.map((p, i) => {
+    p.fields ??= {};
+    return h("div", { class: "card", style: "padding:12px" },
+      h("div", { class: "row", style: "justify-content:space-between;margin-bottom:8px" },
+        h("strong", {}, `Part override ${i + 1}`),
+        h("button", { class: "small ghost", onclick: () => { c.parts.splice(i, 1); markDirty(); drawParts(); } }, "remove")),
+      h("div", { class: "grid" },
+        field("Which part", p, "select", { placeholder: "* · #0 · RegionName=Head" }),
+        field("Geometry (your model)", p.fields, "Geometry", { optional: true, placeholder: "keep" }),
+        field("Texture 1", p.fields, "Texture1", { optional: true, placeholder: "keep" }),
+        field("Texture 2", p.fields, "Texture2", { optional: true, placeholder: "keep" }),
+        colorField("Color 1", p.fields, "Color1", { asRgb: true }),
+        colorField("Color 2", p.fields, "Color2", { asRgb: true }),
+        field("FX", p.fields, "Fx", { list: "dl-fx", optional: true, tag: fxTag, placeholder: "none" })));
+  }));
+  drawParts();
+  return h("div", { class: "card" },
+    h("h3", {}, c.name || "Costume", h("span", { class: "tag" }, `variant ${idx + 1}`),
+      pet.costumes.length > 1 ? h("button", { class: "small ghost", onclick: () => { pet.costumes.splice(idx, 1); markDirty(); render(); } }, "remove") : null),
+    h("div", { class: "grid" },
+      field("Costume name", c, "name", { ident: true }),
+      field("Base costume", c, "from", { list: "dl-costumes", tag: costumeTag }),
+      field("Replaces template costume", c, "replaces", { tag: costumeTag, placeholder: "none (extra variant)" }),
+      field("Scale", c.fields, "Scale", { type: "number", step: "any", optional: true, placeholder: "keep" })),
+    h("div", { class: "swatches", style: "margin-top:12px" },
+      preview,
+      (() => { renderPreview = paint; return colorField("Tint: primary (Color1, all parts)", c.tint, "primary"); })(),
+      colorField("Tint: secondary (Color2, all parts)", c.tint, "secondary")),
+    h("h4", { style: "margin:16px 0 8px" }, "Part overrides"),
+    h("p", { class: "sub" }, "Point a part at your own model and textures once the Rebirth team's exporter is in hand. Part overrides apply after the tint."),
+    partsBody,
+    h("button", { class: "small", onclick: () => { c.parts.push({ select: "*", fields: {} }); markDirty(); drawParts(); } }, "+ part override"));
+}
+
+function viewGenerate() {
+  const result = h("div");
+  const cfg = { data_root: "" };
+  const input = h("input", { placeholder: "C:\\path\\to\\their\\data (folder containing defs\\)" });
+  fetch("/api/config").then(r => r.json()).then(c => { cfg.data_root = c.data_root || ""; input.value = cfg.data_root; });
+  const run = async () => {
+    if (dirty) await save();
+    await fetch("/api/config", { method: "PUT", body: JSON.stringify({ data_root: input.value.trim() }) });
+    result.replaceChildren(h("p", {}, "Generating…"));
+    const r = await fetch("/api/generate", { method: "POST" });
+    const j = await r.json();
+    if (!r.ok) { result.replaceChildren(h("p", { class: "tag err" }, j.error)); return; }
+    result.replaceChildren(
+      h("div", { class: "row", style: "margin-bottom:8px" },
+        h("span", { class: "tag " + (j.errors.length ? "err" : "ok") }, `${j.errors.length} errors`),
+        h("span", { class: "tag warn" }, `${j.warnings.length} warnings`),
+        h("span", { class: "tag" }, `${j.files.length} files → ${j.out}`)),
+      h("pre", {}, j.report));
+  };
+  return [
+    h("h2", {}, "Generate patch"),
+    h("p", { class: "sub" }, "Point this at the maintainers' source data tree (or the test fixture: tests\\fixture\\data). Their tree is only read; files are written to out\\ with a REPORT.md."),
+    h("div", { class: "card" }, h("div", { class: "row" }, h("label", { style: "flex:1" }, "Data root", input), h("button", { class: "primary", onclick: run, style: "align-self:end" }, "Generate"))),
+    result
+  ];
+}
+
+// ---------- validation ----------
+function issues() {
+  const out = [];
+  const err = m => out.push(["err", m]), warn = m => out.push(["warn", m]);
+  const names = new Map();
+  const claim = (n, where) => { if (!n) return; if (names.has(n)) err(`"${n}" used by ${names.get(n)} and ${where}`); else names.set(n, where); };
+  if (!IDENT.test(spec.set.name || "")) err("Set internal name is not a valid identifier");
+  spec.powers.forEach(p => { if (!IDENT.test(p.name || "")) err(`Power "${p.display}" has an invalid internal name`); claim(p.name, `power ${p.display}`); });
+  spec.pets.forEach(pet => {
+    if (!IDENT.test(pet.villain || "")) err(`${pet.label}: invalid villain name`);
+    claim(pet.villain, pet.label);
+    if (pet.kit) claim(pet.kit, `${pet.label} kit`);
+    if (pet.summon_power && !(pet.count >= 1)) err(`${pet.label}: count must be at least 1`);
+    (pet.kit_overrides || []).forEach(o => {
+      if (o.template && !catalog.powers?.has(o.template)) warn(`${pet.label}: kit override "${o.template}" not in client`);
+      if (o.from && !catalog.powers?.has(o.from)) warn(`${pet.label}: body source "${o.from}" not in client`);
+    });
+    pet.costumes.forEach(c => {
+      if (!IDENT.test(c.name || "")) err(`${pet.label}: invalid costume name "${c.name}"`);
+      claim(c.name, `${pet.label} costume`);
+      if (!c.from) err(`${pet.label}: costume ${c.name} has no base costume`);
+      else if (!catalog.costumes?.has(c.from)) warn(`${pet.label}: base costume "${c.from}" is not in the client (custom models must ship first)`);
+    });
+  });
+  return out;
+}
+
+function refreshIssues() {
+  const list = issues();
+  const e = list.filter(x => x[0] === "err").length, w = list.length - e;
+  const tag = $("#issueCount");
+  tag.className = "tag " + (e ? "err" : w ? "warn" : "ok");
+  tag.textContent = e ? `${e} errors, ${w} warnings` : w ? `${w} warnings` : "valid";
+  tag.title = list.map(x => x[1]).join("\n");
+}
+
+// ---------- shell ----------
+function renderNav() {
+  const link = (id, text, extra) => h("a", { href: "#" + id, class: view === id ? "active" : "", onclick: e => { e.preventDefault(); view = id; location.hash = id; render(); } }, text, extra);
+  $("#nav").replaceChildren(
+    h("div", { class: "group" }, "Set"), link("set", "Overview"), link("powers", "Powers", h("span", { class: "tag" }, spec.powers.length)),
+    h("div", { class: "group" }, "Henchmen"),
+    ...spec.pets.map(p => link("pet-" + p.id, p.label, p.tier ? h("span", { class: "tag" }, "T" + p.tier) : h("span", { class: "tag" }, "wisp"))),
+    h("div", { class: "group" }, "Output"), link("generate", "Generate patch"));
+}
+
+function render() {
+  renderNav();
+  let content;
+  if (view === "set") content = viewSet();
+  else if (view === "powers") content = viewPowers();
+  else if (view === "generate") content = viewGenerate();
+  else content = viewPet(spec.pets.find(p => "pet-" + p.id === view) || spec.pets[0]);
+  $("#main").replaceChildren(...[content].flat(2));
+  refreshIssues();
+}
+
+async function save() {
+  const r = await fetch("/api/spec", { method: "PUT", body: JSON.stringify(spec) });
+  if (!r.ok) { alert((await r.json()).error); return; }
+  dirty = false;
+  $("#status").textContent = "Saved " + new Date().toLocaleTimeString();
+  $("#status").className = "";
+}
+
+function fillDatalist(id, items, limit = 25000) {
+  const dl = document.getElementById(id);
+  const frag = document.createDocumentFragment();
+  items.slice(0, limit).forEach(v => frag.append(h("option", { value: v })));
+  dl.replaceChildren(frag);
+}
+
+async function boot() {
+  const [s, c] = await Promise.all([fetch("/api/spec").then(r => r.json()), fetch("/catalog.json").then(r => r.ok ? r.json() : {})]);
+  spec = s;
+  for (const k of ["costumes", "powers", "fx", "icons"]) catalog[k] = new Set(c[k] || []);
+  fillDatalist("dl-costumes", c.costumes || []);
+  fillDatalist("dl-petpowers", (c.powers || []).filter(p => p.startsWith(spec.template.pet_category + ".")));
+  fillDatalist("dl-icons", c.icons || []);
+  fillDatalist("dl-fx", c.fx || []);
+  fillDatalist("dl-classes", c.classes || []);
+  fillDatalist("dl-ai", c.ai_configs || []);
+  if (!c.costumes) $("#status").textContent = "No catalog: run tools\\build_catalog.py";
+  else $("#status").textContent = "Loaded";
+  view = location.hash.slice(1) || "set";
+  render();
+}
+
+$("#saveBtn").addEventListener("click", save);
+$("#exportBtn").addEventListener("click", () => {
+  const a = h("a", { href: URL.createObjectURL(new Blob([JSON.stringify(spec, null, 2)], { type: "application/json" })), download: `${spec.set.name}.json` });
+  a.click();
+});
+$("#importFile").addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const next = JSON.parse(await file.text());
+    if (next.schema !== 1 || !Array.isArray(next.pets)) throw new Error("not a schema-1 spec");
+    spec = next; markDirty(); render();
+  } catch (err) { alert("Import failed: " + err.message); }
+  e.target.value = "";
+});
+document.addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); save(); } });
+window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+boot();
+</script>
+</body>
+</html>

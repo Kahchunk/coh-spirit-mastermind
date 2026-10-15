@@ -1,0 +1,7 @@
+PowerCategory
+{
+	Name Mastermind_Summon
+	PowerSets Mastermind_Summon.Beast_Mastery
+	PowerSets Mastermind_Summon.Necromancy
+	PowerSets Mastermind_Summon.Thugs
+}

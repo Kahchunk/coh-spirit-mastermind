@@ -1,0 +1,19 @@
+Power
+{
+	FullName Mastermind_Pets.Ghosts.Ghastly_Blast
+	Name Ghastly_Blast
+	DisplayName "Ghastly_Blast"
+	IconName Necromancy_Ghastly_Blast.tga
+	RechargeTime 30
+	EnduranceCost 10
+}
+
+Power
+{
+	FullName Mastermind_Pets.Ghosts.Necroplasmic_Grasp
+	Name Necroplasmic_Grasp
+	DisplayName "Necroplasmic_Grasp"
+	IconName Necromancy_Necroplasmic_Grasp.tga
+	RechargeTime 30
+	EnduranceCost 10
+}

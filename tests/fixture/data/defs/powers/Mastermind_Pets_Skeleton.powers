@@ -1,0 +1,29 @@
+Power
+{
+	FullName Mastermind_Pets.Skeleton.Resistance
+	Name Resistance
+	DisplayName "Resistance"
+	IconName Necromancy_Resistance.tga
+	RechargeTime 30
+	EnduranceCost 10
+}
+
+Power
+{
+	FullName Mastermind_Pets.Skeleton.Dark_Blast
+	Name Dark_Blast
+	DisplayName "Dark_Blast"
+	IconName Necromancy_Dark_Blast.tga
+	RechargeTime 30
+	EnduranceCost 10
+}
+
+Power
+{
+	FullName Mastermind_Pets.Skeleton.Hack
+	Name Hack
+	DisplayName "Hack"
+	IconName Necromancy_Hack.tga
+	RechargeTime 30
+	EnduranceCost 10
+}

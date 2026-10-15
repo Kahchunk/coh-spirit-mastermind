@@ -1,0 +1,175 @@
+NPC
+{
+	Name Croatoa_Ghost_Male_Minion_01
+	Costume
+	{
+		EntTypeFile Ghost_Generic_Male
+		Scale 0
+		CostumePart ""
+		{
+			Geometry Loose
+			Texture1 Pants
+			RegionName "Lower Body"
+			Color1  255,  255,  255
+			Color2  0,  0,  0
+		}
+		CostumePart ""
+		{
+			Geometry Masked_Bald
+			Texture1 Skin_Croatoa_Ghost_02
+			RegionName Head
+			Color1  255,  255,  255
+			Color2  0,  0,  0
+		}
+	}
+}
+NPC
+{
+	Name Croatoa_Ghost_Female_Minion_01
+	Costume
+	{
+		EntTypeFile Ghost_Generic_Male
+		Scale 0
+		CostumePart ""
+		{
+			Geometry Loose
+			Texture1 Pants
+			RegionName "Lower Body"
+			Color1  255,  255,  255
+			Color2  0,  0,  0
+		}
+		CostumePart ""
+		{
+			Geometry Masked_Bald
+			Texture1 Skin_Croatoa_Ghost_02
+			RegionName Head
+			Color1  255,  255,  255
+			Color2  0,  0,  0
+		}
+	}
+}
+NPC
+{
+	Name Croatoa_Ghost_Male_Minion_02
+	Costume
+	{
+		EntTypeFile Ghost_Generic_Male
+		Scale 0
+		CostumePart ""
+		{
+			Geometry Loose
+			Texture1 Pants
+			RegionName "Lower Body"
+			Color1  255,  255,  255
+			Color2  0,  0,  0
+		}
+		CostumePart ""
+		{
+			Geometry Masked_Bald
+			Texture1 Skin_Croatoa_Ghost_02
+			RegionName Head
+			Color1  255,  255,  255
+			Color2  0,  0,  0
+		}
+	}
+}
+NPC
+{
+	Name Croatoa_Ghost_Male_Lieutenant_01
+	Costume
+	{
+		EntTypeFile Ghost_Generic_Male
+		Scale 0
+		CostumePart ""
+		{
+			Geometry Loose
+			Texture1 Pants
+			RegionName "Lower Body"
+			Color1  255,  255,  255
+			Color2  0,  0,  0
+		}
+		CostumePart ""
+		{
+			Geometry Masked_Bald
+			Texture1 Skin_Croatoa_Ghost_02
+			RegionName Head
+			Color1  255,  255,  255
+			Color2  0,  0,  0
+		}
+	}
+}
+NPC
+{
+	Name Croatoa_Ghost_Male_Boss_01
+	Costume
+	{
+		EntTypeFile Ghost_Generic_Male
+		Scale 0
+		CostumePart ""
+		{
+			Geometry Loose
+			Texture1 Pants
+			RegionName "Lower Body"
+			Color1  255,  255,  255
+			Color2  0,  0,  0
+		}
+		CostumePart ""
+		{
+			Geometry Masked_Bald
+			Texture1 Skin_Croatoa_Ghost_02
+			RegionName Head
+			Color1  255,  255,  255
+			Color2  0,  0,  0
+		}
+	}
+}
+NPC
+{
+	Name Croatoa_Wisp_Blue
+	Costume
+	{
+		EntTypeFile Ghost_Generic_Male
+		Scale 0
+		CostumePart ""
+		{
+			Geometry Loose
+			Texture1 Pants
+			RegionName "Lower Body"
+			Color1  255,  255,  255
+			Color2  0,  0,  0
+		}
+		CostumePart ""
+		{
+			Geometry Masked_Bald
+			Texture1 Skin_Croatoa_Ghost_02
+			RegionName Head
+			Color1  255,  255,  255
+			Color2  0,  0,  0
+		}
+	}
+}
+NPC
+{
+	Name Croatoa_Wisp_Red
+	Costume
+	{
+		EntTypeFile Ghost_Generic_Male
+		Scale 0
+		CostumePart ""
+		{
+			Geometry Loose
+			Texture1 Pants
+			RegionName "Lower Body"
+			Color1  255,  255,  255
+			Color2  0,  0,  0
+		}
+		CostumePart ""
+		{
+			Geometry Masked_Bald
+			Texture1 Skin_Croatoa_Ghost_02
+			RegionName Head
+			Color1  255,  255,  255
+			Color2  0,  0,  0
+		}
+	}
+}

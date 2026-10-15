@@ -1,0 +1,159 @@
+{
+  "schema": 1,
+  "meta": {
+    "title": "Spirit Binding",
+    "author": "Corbin Lawrence",
+    "notes": "Mastermind primary whose henchmen are Croatoa spirits. Cloned from Necromancy so balance and upgrade wiring start from a shipped set."
+  },
+  "template": {
+    "category": "Mastermind_Summon",
+    "set": "Necromancy",
+    "pet_category": "Mastermind_Pets",
+    "files": {
+      "set_powers": "defs/powers/Mastermind_Summon_Necromancy.powers",
+      "set_powersets": "defs/powers/Mastermind_Summon.powersets",
+      "set_categories": "defs/powers/Player_Mastermind_Summon.categories",
+      "pet_powersets": "defs/powers/Mastermind_Pets.powersets",
+      "pet_categories": "defs/powers/Player_Mastermind_Pets.categories",
+      "villains": "Defs/Villains/MastermindPets.villain",
+      "costume_sources": [
+        "Defs/VillainCostume/Croatoa.nd",
+        "Defs/V_Mastermind_Pets/V_Mastermind_Necromancy.nd"
+      ],
+      "costume_output": "Defs/V_Mastermind_Pets/V_Mastermind_Spirit_Binding.nd"
+    }
+  },
+  "field_names": {
+    "name": "Name",
+    "full_name": "FullName",
+    "display": "DisplayName",
+    "short_help": "DisplayShortHelp",
+    "help": "DisplayHelp",
+    "icon": "IconName",
+    "costume_part": "CostumePart"
+  },
+  "set": {
+    "name": "Spirit_Binding",
+    "display": "Spirit Binding",
+    "short_help": "Bind the restless spirits of Croatoa to your will.",
+    "help": "The fog over Croatoa is thick with the dead who never left. A Spirit Binder calls them up, bargains with them, and sends them at the enemy. Restless spirits fight at range, wailing shades drain their foes, and a lord of the hollow commands them all."
+  },
+  "powers": [
+    { "template": "Dark_Blast", "name": "Spectral_Bolt", "display": "Spectral Bolt", "short_help": "Ranged, Moderate DMG(Negative), Foe -ToHit", "help": "", "icon": "", "fields": {} },
+    { "template": "Zombie_Horde", "name": "Call_the_Restless", "display": "Call the Restless", "short_help": "Summon Restless Spirits", "help": "", "icon": "", "fields": {} },
+    { "template": "Gloom", "name": "Grave_Chill", "display": "Grave Chill", "short_help": "Ranged, DoT(Negative), Foe -ToHit", "help": "", "icon": "", "fields": {} },
+    { "template": "Enchant_Undead", "name": "Binding_Rite", "display": "Binding Rite", "short_help": "Upgrade Spirits", "help": "", "icon": "", "fields": {} },
+    { "template": "Life_Drain", "name": "Siphon_Essence", "display": "Siphon Essence", "short_help": "Ranged, Moderate DMG(Negative), Self +HP", "help": "", "icon": "", "fields": {} },
+    { "template": "Skeletal_Warriors", "name": "Wailing_Shades", "display": "Wailing Shades", "short_help": "Summon Wailing Shades", "help": "", "icon": "", "fields": {} },
+    { "template": "Soul_Extraction", "name": "Will_o_the_Wisp", "display": "Will-o'-the-Wisp", "short_help": "Turn a defeated spirit into a wisp", "help": "", "icon": "", "fields": {} },
+    { "template": "Lich", "name": "Lord_of_the_Hollow", "display": "Lord of the Hollow", "short_help": "Summon the Lord of the Hollow", "help": "", "icon": "", "fields": {} },
+    { "template": "Dark_Empowerment", "name": "Ectoplasmic_Ascension", "display": "Ectoplasmic Ascension", "short_help": "Upgrade Spirits", "help": "", "icon": "", "fields": {} }
+  ],
+  "pets": [
+    {
+      "id": "restless",
+      "tier": 1,
+      "label": "Restless Spirit",
+      "summon_power": "Call_the_Restless",
+      "count": 3,
+      "template_villain": "MastermindPets_Zombie",
+      "villain": "MastermindPets_Restless_Spirit",
+      "template_kit": "Zombie",
+      "kit": "Restless_Spirit",
+      "villain_fields": {},
+      "kit_overrides": [
+        { "template": "Mastermind_Pets.Zombie.Zombie_Brawl", "name": "Ghastly_Blast", "from": "Mastermind_Pets.Ghosts.Ghastly_Blast" }
+      ],
+      "costumes": [
+        { "name": "Spirit_Restless_01", "replaces": "Necromancy_Zombie_01_Base", "from": "Croatoa_Ghost_Male_Minion_01", "fields": {}, "tint": { "primary": "#9fe8ff", "secondary": "#2a6f8f" }, "parts": [] },
+        { "name": "Spirit_Restless_02", "replaces": "Necromancy_Zombie_02_Base", "from": "Croatoa_Ghost_Female_Minion_01", "fields": {}, "tint": { "primary": "#9fe8ff", "secondary": "#2a6f8f" }, "parts": [] },
+        { "name": "Spirit_Restless_03", "replaces": "Necromancy_Zombie_03_Base", "from": "Croatoa_Ghost_Male_Minion_02", "fields": {}, "tint": { "primary": "#9fe8ff", "secondary": "#2a6f8f" }, "parts": [] }
+      ]
+    },
+    {
+      "id": "shade",
+      "tier": 2,
+      "label": "Wailing Shade",
+      "summon_power": "Wailing_Shades",
+      "count": 2,
+      "template_villain": "MastermindPets_Skeletal_Warrior",
+      "villain": "MastermindPets_Wailing_Shade",
+      "template_kit": "Skeleton",
+      "kit": "Wailing_Shade",
+      "villain_fields": {},
+      "kit_overrides": [
+        { "template": "Mastermind_Pets.Skeleton.Dark_Blast", "name": "Ghastly_Blast", "from": "Mastermind_Pets.Ghosts.Ghastly_Blast" }
+      ],
+      "costumes": [
+        { "name": "Spirit_Shade_01", "replaces": "Necromancy_Warrior_01_Base", "from": "Croatoa_Ghost_Male_Lieutenant_01", "fields": {}, "tint": { "primary": "#b8a6ff", "secondary": "#3b2a7a" }, "parts": [] }
+      ]
+    },
+    {
+      "id": "lord",
+      "tier": 3,
+      "label": "Lord of the Hollow",
+      "summon_power": "Lord_of_the_Hollow",
+      "count": 1,
+      "template_villain": "MastermindPets_Lich",
+      "villain": "MastermindPets_Hollow_Lord",
+      "template_kit": "Lich",
+      "kit": "Hollow_Lord",
+      "villain_fields": {},
+      "kit_overrides": [
+        { "template": "Mastermind_Pets.Lich.Torrent", "name": "Necroplasmic_Grasp", "from": "Mastermind_Pets.Ghosts.Necroplasmic_Grasp" }
+      ],
+      "costumes": [
+        { "name": "Spirit_Lord_01", "replaces": "Necromancy_Litch_01_Base", "from": "Croatoa_Ghost_Male_Boss_01", "fields": { "Scale": "15" }, "tint": { "primary": "#d8fff2", "secondary": "#0f4d3c" }, "parts": [] }
+      ]
+    },
+    {
+      "id": "wisp_minion",
+      "tier": 0,
+      "label": "Wisp (from a fallen Restless Spirit)",
+      "summon_power": "",
+      "count": 0,
+      "template_villain": "MastermindPets_Ghost_Minion",
+      "villain": "MastermindPets_Spirit_Wisp_Minion",
+      "template_kit": "",
+      "kit": "",
+      "villain_fields": {},
+      "kit_overrides": [],
+      "costumes": [
+        { "name": "Spirit_Wisp_Small", "replaces": "Necromancy_Ghost_Zombie", "from": "Croatoa_Wisp_Blue", "fields": {}, "tint": { "primary": "", "secondary": "" }, "parts": [] }
+      ]
+    },
+    {
+      "id": "wisp_lt",
+      "tier": 0,
+      "label": "Wisp (from a fallen Wailing Shade)",
+      "summon_power": "",
+      "count": 0,
+      "template_villain": "MastermindPets_Ghost_Lt",
+      "villain": "MastermindPets_Spirit_Wisp_Lt",
+      "template_kit": "",
+      "kit": "",
+      "villain_fields": {},
+      "kit_overrides": [],
+      "costumes": [
+        { "name": "Spirit_Wisp", "replaces": "Necromancy_Ghost_Warrior", "from": "Croatoa_Wisp_Blue", "fields": {}, "tint": { "primary": "", "secondary": "" }, "parts": [] }
+      ]
+    },
+    {
+      "id": "wisp_boss",
+      "tier": 0,
+      "label": "Wisp (from the fallen Lord)",
+      "summon_power": "",
+      "count": 0,
+      "template_villain": "MastermindPets_Ghost_Boss",
+      "villain": "MastermindPets_Spirit_Wisp_Boss",
+      "template_kit": "",
+      "kit": "",
+      "villain_fields": {},
+      "kit_overrides": [],
+      "costumes": [
+        { "name": "Spirit_Wisp_Great", "replaces": "Necromancy_Ghost_Litch", "from": "Croatoa_Wisp_Red", "fields": {}, "tint": { "primary": "", "secondary": "" }, "parts": [] }
+      ]
+    }
+  ],
+  "token_map": {}
+}

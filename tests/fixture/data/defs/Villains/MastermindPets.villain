@@ -1,0 +1,104 @@
+VillainDef
+{
+	Name MastermindPets_Zombie
+	Class Class_Minion_Henchman
+	AIConfig Pets_Melee
+	Power
+	{
+		PowerCategory Mastermind_Pets
+		PowerSet Zombie
+		Power *
+	}
+	Level
+	{
+		Level 1
+		Costume Necromancy_Zombie_01_Base
+		Costume Necromancy_Zombie_02_Base
+		Costume Necromancy_Zombie_03_Base
+	}
+}
+VillainDef
+{
+	Name MastermindPets_Skeletal_Warrior
+	Class Class_Lt_Henchman
+	AIConfig Pets_Melee
+	Power
+	{
+		PowerCategory Mastermind_Pets
+		PowerSet Skeleton
+		Power *
+	}
+	Level
+	{
+		Level 1
+		Costume Necromancy_Warrior_01_Base
+	}
+}
+VillainDef
+{
+	Name MastermindPets_Lich
+	Class Class_Boss_Henchman
+	AIConfig Pets_Melee
+	Power
+	{
+		PowerCategory Mastermind_Pets
+		PowerSet Lich
+		Power *
+	}
+	Level
+	{
+		Level 1
+		Costume Necromancy_Litch_01_Base
+	}
+}
+VillainDef
+{
+	Name MastermindPets_Ghost_Minion
+	Class Class_Minion_Henchman
+	AIConfig Pets_Melee
+	Power
+	{
+		PowerCategory Mastermind_Pets
+		PowerSet Ghosts
+		Power *
+	}
+	Level
+	{
+		Level 1
+		Costume Necromancy_Ghost_Zombie
+	}
+}
+VillainDef
+{
+	Name MastermindPets_Ghost_Lt
+	Class Class_Lt_Henchman
+	AIConfig Pets_Melee
+	Power
+	{
+		PowerCategory Mastermind_Pets
+		PowerSet Ghosts
+		Power *
+	}
+	Level
+	{
+		Level 1
+		Costume Necromancy_Ghost_Warrior
+	}
+}
+VillainDef
+{
+	Name MastermindPets_Ghost_Boss
+	Class Class_Boss_Henchman
+	AIConfig Pets_Melee
+	Power
+	{
+		PowerCategory Mastermind_Pets
+		PowerSet Ghosts
+		Power *
+	}
+	Level
+	{
+		Level 1
+		Costume Necromancy_Ghost_Litch
+	}
+}

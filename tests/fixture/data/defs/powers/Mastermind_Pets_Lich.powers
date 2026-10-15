@@ -1,0 +1,19 @@
+Power
+{
+	FullName Mastermind_Pets.Lich.Resistance
+	Name Resistance
+	DisplayName "Resistance"
+	IconName Necromancy_Resistance.tga
+	RechargeTime 30
+	EnduranceCost 10
+}
+
+Power
+{
+	FullName Mastermind_Pets.Lich.Torrent
+	Name Torrent
+	DisplayName "Torrent"
+	IconName Necromancy_Torrent.tga
+	RechargeTime 30
+	EnduranceCost 10
+}

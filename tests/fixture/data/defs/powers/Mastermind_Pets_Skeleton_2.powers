@@ -1,0 +1,9 @@
+Power
+{
+	FullName Mastermind_Pets.Skeleton_2.Hack
+	Name Hack
+	DisplayName "Hack"
+	IconName Necromancy_Hack.tga
+	RechargeTime 30
+	EnduranceCost 10
+}

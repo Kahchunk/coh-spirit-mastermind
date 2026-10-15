@@ -1,0 +1,76 @@
+PowerSet
+{
+	FullName Mastermind_Pets.Zombie
+	Name Zombie
+	DisplayName "Mastermind_Pets.Zombie"
+	Powers Mastermind_Pets.Zombie.Resistance
+	Powers Mastermind_Pets.Zombie.Zombie_Brawl
+	Powers Mastermind_Pets.Zombie.Super_Leap
+}
+PowerSet
+{
+	FullName Mastermind_Pets.Zombie_2
+	Name Zombie_2
+	DisplayName "Mastermind_Pets.Zombie_2"
+	Powers Mastermind_Pets.Zombie_2.Zombie_Vomit
+}
+PowerSet
+{
+	FullName Mastermind_Pets.Zombie_3
+	Name Zombie_3
+	DisplayName "Mastermind_Pets.Zombie_3"
+	Powers Mastermind_Pets.Zombie_3.Empower
+}
+PowerSet
+{
+	FullName Mastermind_Pets.Skeleton
+	Name Skeleton
+	DisplayName "Mastermind_Pets.Skeleton"
+	Powers Mastermind_Pets.Skeleton.Resistance
+	Powers Mastermind_Pets.Skeleton.Dark_Blast
+	Powers Mastermind_Pets.Skeleton.Hack
+}
+PowerSet
+{
+	FullName Mastermind_Pets.Skeleton_2
+	Name Skeleton_2
+	DisplayName "Mastermind_Pets.Skeleton_2"
+	Powers Mastermind_Pets.Skeleton_2.Hack
+}
+PowerSet
+{
+	FullName Mastermind_Pets.Skeleton_3
+	Name Skeleton_3
+	DisplayName "Mastermind_Pets.Skeleton_3"
+	Powers Mastermind_Pets.Skeleton_3.Empower
+}
+PowerSet
+{
+	FullName Mastermind_Pets.Lich
+	Name Lich
+	DisplayName "Mastermind_Pets.Lich"
+	Powers Mastermind_Pets.Lich.Resistance
+	Powers Mastermind_Pets.Lich.Torrent
+}
+PowerSet
+{
+	FullName Mastermind_Pets.Lich_2
+	Name Lich_2
+	DisplayName "Mastermind_Pets.Lich_2"
+	Powers Mastermind_Pets.Lich_2.Enchant
+}
+PowerSet
+{
+	FullName Mastermind_Pets.Lich_3
+	Name Lich_3
+	DisplayName "Mastermind_Pets.Lich_3"
+	Powers Mastermind_Pets.Lich_3.Empower
+}
+PowerSet
+{
+	FullName Mastermind_Pets.Ghosts
+	Name Ghosts
+	DisplayName "Mastermind_Pets.Ghosts"
+	Powers Mastermind_Pets.Ghosts.Ghastly_Blast
+	Powers Mastermind_Pets.Ghosts.Necroplasmic_Grasp
+}

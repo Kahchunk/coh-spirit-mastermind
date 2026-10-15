@@ -1,0 +1,9 @@
+Power
+{
+	FullName Mastermind_Pets.Zombie_2.Zombie_Vomit
+	Name Zombie_Vomit
+	DisplayName "Zombie_Vomit"
+	IconName Necromancy_Zombie_Vomit.tga
+	RechargeTime 30
+	EnduranceCost 10
+}

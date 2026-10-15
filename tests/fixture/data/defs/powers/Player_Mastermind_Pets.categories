@@ -1,0 +1,14 @@
+PowerCategory
+{
+	Name Mastermind_Pets
+	PowerSets Mastermind_Pets.Zombie
+	PowerSets Mastermind_Pets.Zombie_2
+	PowerSets Mastermind_Pets.Zombie_3
+	PowerSets Mastermind_Pets.Skeleton
+	PowerSets Mastermind_Pets.Skeleton_2
+	PowerSets Mastermind_Pets.Skeleton_3
+	PowerSets Mastermind_Pets.Lich
+	PowerSets Mastermind_Pets.Lich_2
+	PowerSets Mastermind_Pets.Lich_3
+	PowerSets Mastermind_Pets.Ghosts
+}

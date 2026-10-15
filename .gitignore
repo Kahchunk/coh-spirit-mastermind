@@ -1,0 +1,5 @@
+out/
+spec/history/
+editor/local_config.json
+tests/fixture/out/
+__pycache__/

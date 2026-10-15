@@ -1,0 +1,9 @@
+Power
+{
+	FullName Mastermind_Pets.Lich_2.Enchant
+	Name Enchant
+	DisplayName "Enchant"
+	IconName Necromancy_Enchant.tga
+	RechargeTime 30
+	EnduranceCost 10
+}

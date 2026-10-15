@@ -1,0 +1,9 @@
+Power
+{
+	FullName Mastermind_Pets.Zombie_3.Empower
+	Name Empower
+	DisplayName "Empower"
+	IconName Necromancy_Empower.tga
+	RechargeTime 30
+	EnduranceCost 10
+}

@@ -1,0 +1,14 @@
+PowerSet
+{
+	FullName Mastermind_Summon.Thugs
+	Name Thugs
+	DisplayName "Mastermind_Summon.Thugs"
+}
+PowerSet
+{
+	FullName Mastermind_Summon.Necromancy
+	Name Necromancy
+	DisplayName "Mastermind_Summon.Necromancy"
+	Powers Mastermind_Summon.Necromancy.Dark_Blast
+	Powers Mastermind_Summon.Necromancy.Zombie_Horde
+}

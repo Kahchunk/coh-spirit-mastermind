@@ -1,0 +1,25 @@
+NPC
+{
+	Name Necromancy_Zombie_01_Base
+	Costume
+	{
+		EntTypeFile Ghost_Generic_Male
+		Scale 0
+		CostumePart ""
+		{
+			Geometry Loose
+			Texture1 Pants
+			RegionName "Lower Body"
+			Color1  255,  255,  255
+			Color2  0,  0,  0
+		}
+		CostumePart ""
+		{
+			Geometry Masked_Bald
+			Texture1 Skin_Croatoa_Ghost_02
+			RegionName Head
+			Color1  255,  255,  255
+			Color2  0,  0,  0
+		}
+	}
+}

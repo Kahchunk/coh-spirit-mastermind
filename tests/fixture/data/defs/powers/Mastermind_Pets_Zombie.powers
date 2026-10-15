@@ -1,0 +1,29 @@
+Power
+{
+	FullName Mastermind_Pets.Zombie.Resistance
+	Name Resistance
+	DisplayName "Resistance"
+	IconName Necromancy_Resistance.tga
+	RechargeTime 30
+	EnduranceCost 10
+}
+
+Power
+{
+	FullName Mastermind_Pets.Zombie.Zombie_Brawl
+	Name Zombie_Brawl
+	DisplayName "Zombie_Brawl"
+	IconName Necromancy_Zombie_Brawl.tga
+	RechargeTime 30
+	EnduranceCost 10
+}
+
+Power
+{
+	FullName Mastermind_Pets.Zombie.Super_Leap
+	Name Super_Leap
+	DisplayName "Super_Leap"
+	IconName Necromancy_Super_Leap.tga
+	RechargeTime 30
+	EnduranceCost 10
+}

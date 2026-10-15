@@ -1,0 +1,150 @@
+// Necromancy (synthetic test fixture)
+Power
+{
+	FullName Mastermind_Summon.Necromancy.Dark_Blast
+	Name Dark_Blast
+	DisplayName "Dark_Blast"
+	IconName Necromancy_Dark_Blast.tga
+	RechargeTime 30
+	EnduranceCost 10
+}
+
+Power
+{
+	FullName Mastermind_Summon.Necromancy.Zombie_Horde
+	Name Zombie_Horde
+	DisplayName "Zombie_Horde"
+	IconName Necromancy_Zombie_Horde.tga
+	RechargeTime 30
+	EnduranceCost 10
+	AttribMod
+	{
+		Attrib kNull
+		EntityDef MastermindPets_Zombie
+	}
+	AttribMod
+	{
+		Attrib kNull
+		EntityDef MastermindPets_Zombie
+	}
+	AttribMod
+	{
+		Attrib kNull
+		EntityDef MastermindPets_Zombie
+	}
+}
+
+Power
+{
+	FullName Mastermind_Summon.Necromancy.Gloom
+	Name Gloom
+	DisplayName "Gloom"
+	IconName Necromancy_Gloom.tga
+	RechargeTime 30
+	EnduranceCost 10
+}
+
+Power
+{
+	FullName Mastermind_Summon.Necromancy.Enchant_Undead
+	Name Enchant_Undead
+	DisplayName "Enchant_Undead"
+	IconName Necromancy_Enchant_Undead.tga
+	RechargeTime 30
+	EnduranceCost 10
+	AttribMod
+	{
+		Requires target.VillainName MastermindPets_Zombie eq
+		Reward Mastermind_Pets.Zombie_2.Zombie_Vomit
+	}
+	AttribMod
+	{
+		Requires target.VillainName MastermindPets_Skeletal_Warrior eq
+		Reward Mastermind_Pets.Skeleton_2.Hack
+	}
+}
+
+Power
+{
+	FullName Mastermind_Summon.Necromancy.Life_Drain
+	Name Life_Drain
+	DisplayName "Life_Drain"
+	IconName Necromancy_Life_Drain.tga
+	RechargeTime 30
+	EnduranceCost 10
+}
+
+Power
+{
+	FullName Mastermind_Summon.Necromancy.Skeletal_Warriors
+	Name Skeletal_Warriors
+	DisplayName "Skeletal_Warriors"
+	IconName Necromancy_Skeletal_Warriors.tga
+	RechargeTime 30
+	EnduranceCost 10
+	AttribMod
+	{
+		Attrib kNull
+		EntityDef MastermindPets_Skeletal_Warrior
+	}
+	AttribMod
+	{
+		Attrib kNull
+		EntityDef MastermindPets_Skeletal_Warrior
+	}
+}
+
+Power
+{
+	FullName Mastermind_Summon.Necromancy.Soul_Extraction
+	Name Soul_Extraction
+	DisplayName "Soul_Extraction"
+	IconName Necromancy_Soul_Extraction.tga
+	RechargeTime 30
+	EnduranceCost 10
+	AttribMod
+	{
+		Attrib kNull
+		EntityDef MastermindPets_Ghost_Minion
+	}
+	AttribMod
+	{
+		Attrib kNull
+		EntityDef MastermindPets_Ghost_Lt
+	}
+	AttribMod
+	{
+		Attrib kNull
+		EntityDef MastermindPets_Ghost_Boss
+	}
+}
+
+Power
+{
+	FullName Mastermind_Summon.Necromancy.Lich
+	Name Lich
+	DisplayName "Lich"
+	IconName Necromancy_Lich.tga
+	RechargeTime 30
+	EnduranceCost 10
+	AttribMod
+	{
+		Attrib kNull
+		EntityDef MastermindPets_Lich
+	}
+}
+
+Power
+{
+	FullName Mastermind_Summon.Necromancy.Dark_Empowerment
+	Name Dark_Empowerment
+	DisplayName "Dark_Empowerment"
+	IconName Necromancy_Dark_Empowerment.tga
+	RechargeTime 30
+	EnduranceCost 10
+	AttribMod
+	{
+		Requires target.VillainName MastermindPets_Lich eq
+		Reward Mastermind_Pets.Lich_3.Empower
+	}
+}
