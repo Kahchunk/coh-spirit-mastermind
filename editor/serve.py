@@ -78,6 +78,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, load_json(self.spec_path, {}))
         if self.path == "/api/config":
             return self._send(200, load_json(CONFIG, {"data_root": ""}))
+        if self.path == "/api/specs":
+            spec_dir = os.path.join(ROOT, "spec")
+            names = sorted(f for f in os.listdir(spec_dir) if f.endswith(".json"))
+            return self._send(200, {"specs": names, "active": os.path.basename(self.spec_path)})
         self._send(404, {"error": "not found"})
 
     def do_PUT(self):
@@ -88,18 +92,26 @@ class Handler(BaseHTTPRequestHandler):
         except json.JSONDecodeError as e:
             return self._send(400, {"error": f"bad JSON: {e}"})
         if self.path == "/api/spec":
-            if body.get("schema") != 1 or not isinstance(body.get("pets"), list):
+            if body.get("schema") != 1 or not (isinstance(body.get("pets"), list) or isinstance(body.get("custom_weapons"), dict)):
                 return self._send(400, {"error": "not a schema-1 spec"})
             hist = os.path.join(ROOT, "spec", "history")
             os.makedirs(hist, exist_ok=True)
             if os.path.exists(self.spec_path):
                 stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-                shutil.copy2(self.spec_path, os.path.join(hist, f"{stamp}.json"))
+                stem = os.path.splitext(os.path.basename(self.spec_path))[0]
+                shutil.copy2(self.spec_path, os.path.join(hist, f"{stem}-{stamp}.json"))
             save_json(self.spec_path, body)
             return self._send(200, {"ok": True})
         if self.path == "/api/config":
             save_json(CONFIG, {"data_root": str(body.get("data_root", ""))})
             return self._send(200, {"ok": True})
+        if self.path == "/api/active":
+            name = os.path.basename(str(body.get("spec", "")))
+            path = os.path.join(ROOT, "spec", name)
+            if not name.endswith(".json") or not os.path.isfile(path):
+                return self._send(400, {"error": f"no spec {name}"})
+            Handler.spec_path = path
+            return self._send(200, {"ok": True, "active": name})
         self._send(404, {"error": "not found"})
 
     def do_POST(self):

@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "meta": {
+    "title": "Heavy Ordnance custom weapons",
+    "author": "Corbin Lawrence",
+    "notes": "Tintable player versions of the Council heavy weapons. Meshes come from the existing NPC weapons (GEO_WepR_Rocket_Launcher_1 etc.) re-exported as their own .geo; textures are repainted on a light grayscale base with a two-color mask."
+  },
+  "field_names": {
+    "display": "DisplayName"
+  },
+  "custom_weapons": {
+    "family": "HeavyOrdnance",
+    "template_family": "AssaultRifle",
+    "menu_file": "menu/costume/localized/{body}/all/weapons/inc_weapons_assaultrifles.ctm",
+    "weapons": [
+      {
+        "name": "RocketLauncher01",
+        "label": "Rocket Launcher",
+        "template": "Council01",
+        "trick_template": "X_CustomWeapon_AssaultRifle_01",
+        "source_mesh": "GEO_WepR_Rocket_Launcher_1",
+        "geometry": "",
+        "textures": { "base": "WepR_HeavyOrdnance_RocketLauncher01", "mask": "WepR_HeavyOrdnance_RocketLauncher01_Mask", "bump": "" },
+        "unlock_key": ""
+      },
+      {
+        "name": "GrenadeLauncher01",
+        "label": "Grenade Launcher",
+        "template": "Council01",
+        "trick_template": "X_CustomWeapon_AssaultRifle_01",
+        "source_mesh": "GEO_WepR_Grenade_Launcher_1",
+        "geometry": "",
+        "textures": { "base": "WepR_HeavyOrdnance_GrenadeLauncher01", "mask": "WepR_HeavyOrdnance_GrenadeLauncher01_Mask", "bump": "" },
+        "unlock_key": ""
+      },
+      {
+        "name": "Chaingun01",
+        "label": "Chain Gun (tintable)",
+        "template": "Chaingun01",
+        "trick_template": "X_CustomWeapon_AssaultRifle_01",
+        "source_mesh": "GEO_WepR_Chaingun_1",
+        "geometry": "",
+        "textures": { "base": "WepR_HeavyOrdnance_Chaingun01", "mask": "WepR_HeavyOrdnance_Chaingun01_Mask", "bump": "" },
+        "unlock_key": ""
+      },
+      {
+        "name": "Flamethrower01",
+        "label": "Flamethrower",
+        "template": "Council01",
+        "trick_template": "X_CustomWeapon_AssaultRifle_01",
+        "source_mesh": "GEO_WepR_Flamethrower_1",
+        "geometry": "",
+        "textures": { "base": "WepR_HeavyOrdnance_Flamethrower01", "mask": "WepR_HeavyOrdnance_Flamethrower01_Mask", "bump": "" },
+        "unlock_key": ""
+      }
+    ]
+  }
+}

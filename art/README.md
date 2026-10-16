@@ -68,6 +68,26 @@ Read from the client's costume data:
 7. Reference the new geometry from a costume part (`Geometry` / `Texture1` / `Texture2` fields) in the spec
    editor's costume **Part overrides**.
 
+## Weapon color masks (how shipped weapons do it)
+
+Surveyed from the client (`tricks/WEAPONS/CustomWeapons.txt` and the custom weapon models):
+
+- A tintable weapon's model references a **layered texture** `X_CustomWeapon_...`. That layered texture
+  names a **base**, a **mask** (or `None`) and a **bump** map.
+- About 70% of player weapon models use layered textures. 39 of the 63 custom-weapon layered textures
+  have a real mask. The rest are older enemy weapons ported with plain textures, including the
+  existing Assault Rifle "Chaingun" option, which reuses the Council texture and has no mask.
+- **Base:** near-white grayscale detail; all hue comes from the player's colors.
+- **Mask:** blocky black/white regions over the same UV layout. Black and white select the two color
+  slots, and grays blend. Masks are often lower resolution than the base (e.g. 128x64 on a 512x256 base).
+- Reusing a mask on a dark, already-colored base tints muddy (see the Vanguard rifle). Repaint the base light.
+
+Preview any base + mask pair with two colorways:
+
+```bash
+python tools/mask_preview.py art/reference/mask_check.png <base.png> <mask.png>
+```
+
 ## Open questions for SilverAgeFan
 
 - Rebirth's Max 2015 setup: the `CoH_VRML_EXP` build, plus any MAXScript or project settings.

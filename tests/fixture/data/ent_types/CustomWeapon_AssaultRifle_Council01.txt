@@ -1,0 +1,8 @@
+// synthetic fixture
+Type
+{
+	Name CustomWeapon_AssaultRifle_Council01
+	Inherit CustomWeapon_AssaultRifle.txt
+	CostumeName AssaultRifle_Council01
+	Geometry player_library/G_WepR_AssaultRifle_Council01.geo
+}

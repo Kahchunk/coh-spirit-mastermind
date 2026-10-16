@@ -1,0 +1,16 @@
+// synthetic fixture
+Texture X_CustomWeapon_AssaultRifle_01
+{
+	BumpMap Weapons_Machine_Gun_02_Bump
+	Base Weapons_Machine_Gun_02
+	Mask Weapons_Machine_Gun_02_Mask
+	Multiply1 Weapons_Machine_Gun_02_Bump
+}
+
+Texture X_CustomWeapon_AssaultRifle_Council01
+{
+	BumpMap Weapons_Rifle_03_Bump
+	Base WepR_Machine_Gun_2
+	Mask None
+	Multiply1 Weapons_Rifle_03_Bump
+}

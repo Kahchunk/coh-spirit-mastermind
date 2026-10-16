@@ -91,6 +91,27 @@ Known gaps to review by hand:
 - Wisps use the wisp costumes on the ghost villain defs; confirm skeleton/ent type compatibility.
 - Power numbers are left at Necromancy's values unless set in the spec.
 
+## Custom (tintable) weapons
+
+`spec/heavy_ordnance_weapons.json` adds tintable player versions of the Council heavy weapons
+(rocket launcher, grenade launcher, chain gun, flamethrower) as Power Customization options. Each
+weapon is cloned from a shipped custom weapon across the four places the game defines one:
+
+| Piece | File |
+|---|---|
+| Entity (points at the model) | `ent_types/CustomWeapon_<Family>_<Name>.txt` |
+| Hand attachment, per body | `fx/WEAPONS/Custom_<Family>/{Male,Fem,Huge}_<Family>_<Name>.fx` |
+| Layered texture (base + color mask + bump) | `tricks/WEAPONS/CustomWeapons.txt` (`X_CustomWeapon_<Family>_<Name>`) |
+| Menu option | `menu/costume/localized/{male,female,huge}/all/weapons/inc_weapons_<family>.ctm` |
+
+```bash
+python tools/generate.py --data <data root> --spec spec/heavy_ordnance_weapons.json
+```
+
+The model (`player_library/G_WepR_<Family>_<Name>.geo`, re-exported from the existing NPC mesh)
+and the base + mask textures come from the art side; see `art/README.md`. The editor's spec
+switcher (top bar) opens either spec.
+
 ## Tests
 
 ```bash

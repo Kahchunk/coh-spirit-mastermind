@@ -15,6 +15,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 import cryptic_text as ct  # noqa: E402
+import weapons  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ART_WORDS = re.compile(r"(?i)necromancy|zombie|skelet|(?<![a-z])li(?:t)?ch(?![a-z])|grave_?knight")
@@ -25,13 +26,16 @@ class Gen:
         self.spec = spec
         self.data = data_root
         self.catalog = catalog or {}
-        self.F = spec["field_names"]
-        self.T = spec["template"]
+        self.F = {"name": "Name", "full_name": "FullName", "display": "DisplayName",
+                  "short_help": "DisplayShortHelp", "help": "DisplayHelp", "icon": "IconName",
+                  "costume_part": "CostumePart", **spec.get("field_names", {})}
+        self.T = spec.get("template", {})
         self.errors, self.warnings, self.notes = [], [], []
         self.outputs = {}          # rel path -> text
         self.new_text = {}         # rel path -> only the content we added (for lint)
         self.token_map = {}
         self.villain_short_map = {}
+        self.weapon_template_ids = {}
 
     # ---------- io ----------
     def path(self, rel):
@@ -394,7 +398,7 @@ class Gen:
         # Power category/set names also show up in the costume catalog; they are not costumes.
         set_parts = {seg for s in self.catalog.get("powersets", []) for seg in s.split(".")}
         costumes = set(self.catalog.get("costumes", [])) - set_parts
-        new_costumes = {c["name"] for p in self.spec["pets"] for c in p["costumes"]}
+        new_costumes = {c["name"] for p in self.spec.get("pets", []) for c in p["costumes"]}
         for rel, added in self.new_text.items():
             for tok, line in ct.find_tokens(added, list(self.token_map)):
                 self.errors.append(f"`{rel}` (added text, line {line}): still references template `{tok}`.")
@@ -402,25 +406,34 @@ class Gen:
                 for w in set(re.findall(r"[A-Za-z][A-Za-z0-9_]{2,}", added)):
                     if w in costumes and w not in new_costumes and w not in template_ids:
                         self.errors.append(f"`{rel}`: cloned villain still uses template costume `{w}`. Add it to a costume's `replaces`.")
-            for i, line in enumerate(added.split("\n"), 1):
-                if ART_WORDS.search(line):
-                    self.warnings.append(f"Art pass: `{rel}` added line {i}: `{line.strip()[:120]}`")
+            for tok, line in ct.find_tokens(added, list(self.weapon_template_ids)):
+                self.errors.append(f"`{rel}` (added text, line {line}): still references template weapon `{tok}`.")
+            art = [(i, s.strip()) for i, s in enumerate(added.split("\n"), 1) if ART_WORDS.search(s)]
+            if art:
+                shown = "; ".join(f"L{i} `{s[:80]}`" for i, s in art[:4])
+                more = f" (+{len(art) - 4} more)" if len(art) > 4 else ""
+                self.warnings.append(f"Art pass, `{rel}`: {len(art)} lines still name the template art/powers: {shown}{more}")
 
     # ---------- run ----------
     def run(self):
-        self.build_map()
+        has_set = bool(self.spec.get("powers"))
+        if has_set:
+            self.build_map()
         if not self.errors:
-            self.gen_set_powers()
-            self.gen_kits()
-            self.gen_powersets()
-            self.gen_categories()
-            self.gen_villains()
-            self.gen_costumes()
+            if has_set:
+                self.gen_set_powers()
+                self.gen_kits()
+                self.gen_powersets()
+                self.gen_categories()
+                self.gen_villains()
+                self.gen_costumes()
+            weapons.gen_custom_weapons(self)
             self.lint()
         return self
 
     def report(self):
-        L = [f"# Patch report: {self.spec['set']['display']}", ""]
+        title = (self.spec.get("set") or {}).get("display") or self.spec.get("meta", {}).get("title", "patch")
+        L = [f"# Patch report: {title}", ""]
         L.append(f"**{len(self.errors)} errors, {len(self.warnings)} warnings.** "
                  "Errors must be fixed before handing this to the maintainers.")
         L += ["", "## Files", ""]

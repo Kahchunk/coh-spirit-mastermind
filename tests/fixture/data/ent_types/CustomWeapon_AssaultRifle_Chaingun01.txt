@@ -1,0 +1,8 @@
+// synthetic fixture
+Type
+{
+	Name CustomWeapon_AssaultRifle_Chaingun01
+	Inherit CustomWeapon_AssaultRifle.txt
+	CostumeName AssaultRifle_Chaingun01
+	Geometry player_library/G_WepR_AssaultRifle_Chaingun01.geo
+}

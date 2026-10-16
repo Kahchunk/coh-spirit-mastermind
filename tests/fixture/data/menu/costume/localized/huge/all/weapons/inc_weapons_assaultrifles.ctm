@@ -1,0 +1,22 @@
+// synthetic fixture
+GeoSet
+{
+	DisplayName "Assault Rifles"
+	Info
+	{
+		DisplayName "Tommy Gun"
+		Fx WEAPONS/Custom_AssaultRifle/Huge_AssaultRifle_TommyGun01.fx
+		Key CustomWeapon_Family_01
+	}
+	Info
+	{
+		DisplayName "Council Rifle"
+		Fx WEAPONS/Custom_AssaultRifle/Huge_AssaultRifle_Council01.fx
+		Key CustomWeapon_Council_01
+	}
+	Info
+	{
+		DisplayName "Chaingun"
+		Fx WEAPONS/Custom_AssaultRifle/Huge_AssaultRifle_Chaingun01.fx
+	}
+}

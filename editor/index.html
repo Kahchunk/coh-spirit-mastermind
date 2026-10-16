@@ -71,6 +71,7 @@ pre { white-space: pre-wrap; background: var(--field); border: 1px solid var(--l
 <body>
 <header>
   <h1>Spirit Set Editor</h1>
+  <select id="specSelect" title="Which spec file you are editing"></select>
   <span id="status">Loading...</span>
   <span class="spacer"></span>
   <span id="issueCount" class="tag"></span>
@@ -99,6 +100,7 @@ const PART_FIELDS = ["Geometry", "Texture1", "Texture2", "Color1", "Color2", "Fx
 const IDENT = /^[A-Za-z][A-Za-z0-9_]*$/;
 
 let spec = null, catalog = {}, sets = {}, dirty = false, view = "set";
+const weaponTemplates = {};
 
 const $ = (s, el = document) => el.querySelector(s);
 const h = (tag, attrs = {}, ...kids) => {
@@ -345,15 +347,76 @@ function viewGenerate() {
   ];
 }
 
+function viewWeapons() {
+  const cw = spec.custom_weapons;
+  const fams = Object.keys(weaponTemplates).sort();
+  const famList = h("datalist", { id: "dl-weapon-families" }, ...fams.map(f => h("option", { value: f })));
+  const tplList = h("datalist", { id: "dl-weapon-templates" }, ...[...(weaponTemplates[cw.template_family] || [])].sort().map(t => h("option", { value: t })));
+  const body = h("div");
+  const blank = () => ({ name: "", label: "", template: "", trick_template: "X_CustomWeapon_AssaultRifle_01", source_mesh: "", geometry: "",
+    textures: { base: "", mask: "", bump: "" }, unlock_key: "" });
+  const derived = w => {
+    const n = `${cw.family || "Family"}_${w.name || "Name"}`;
+    return `ent_types/CustomWeapon_${n}.txt | fx/WEAPONS/Custom_${cw.family || "Family"}/{Male,Fem,Huge}_${n}.fx | ${w.geometry || "G_WepR_" + n}.geo | X_CustomWeapon_${n}`;
+  };
+  const draw = () => body.replaceChildren(...cw.weapons.map((w, i) => {
+    w.textures ??= { base: "", mask: "", bump: "" };
+    const paths = h("p", { class: "ro" }, derived(w));
+    const upd = () => { paths.textContent = derived(w); };
+    return h("div", { class: "card" },
+      h("h3", {}, w.label || w.name || "New weapon",
+        h("button", { class: "small ghost", onclick: () => { cw.weapons.splice(i, 1); markDirty(); draw(); renderNav(); } }, "remove")),
+      h("div", { class: "grid" },
+        field("Internal name", w, "name", { ident: true, onchange: upd }),
+        field("Menu label", w, "label"),
+        field(`Template (${cw.template_family} option)`, w, "template", { list: "dl-weapon-templates", tag: v => !v ? null : weaponTemplates[cw.template_family]?.has(v) ? ["ok", "shipped"] : ["warn", "not found"] }),
+        field("Layered-texture template", w, "trick_template", { placeholder: "X_CustomWeapon_AssaultRifle_01" }),
+        field("Source mesh (to re-export)", w, "source_mesh", { placeholder: "GEO_WepR_Rocket_Launcher_1" }),
+        field("Geometry name", w, "geometry", { placeholder: "default: G_WepR_<Family>_<Name>", onchange: upd }),
+        field("Unlock key", w, "unlock_key", { placeholder: "blank = none" })),
+      h("h4", { style: "margin:16px 0 8px" }, "Textures"),
+      h("p", { class: "sub" }, "Base: light grayscale detail. Mask: black/white regions for the two color slots, same UV layout (can be lower resolution)."),
+      h("div", { class: "grid" },
+        field("Base", w.textures, "base", { placeholder: "WepR_<Family>_<Name>" }),
+        field("Color mask", w.textures, "mask", { placeholder: "WepR_<Family>_<Name>_Mask" }),
+        field("Bump", w.textures, "bump", { placeholder: "blank = keep template bump" })),
+      paths);
+  }));
+  draw();
+  return [
+    famList, tplList,
+    h("h2", {}, "Custom weapons"),
+    h("p", { class: "sub" }, "Tintable weapons cloned from a shipped custom weapon: entity, per-body fx, layered texture and Power Customization menu entry. The model and textures come from your Max 2015 export."),
+    h("div", { class: "card" }, h("div", { class: "grid" },
+      field("Weapon family (new)", cw, "family", { ident: true, onchange: draw }),
+      field("Template family", cw, "template_family", { list: "dl-weapon-families", onchange: () => render() }),
+      field("Menu file", cw, "menu_file"))),
+    body,
+    h("button", { onclick: () => { cw.weapons.push(blank()); markDirty(); draw(); renderNav(); } }, "+ weapon")
+  ];
+}
+
 // ---------- validation ----------
 function issues() {
   const out = [];
   const err = m => out.push(["err", m]), warn = m => out.push(["warn", m]);
   const names = new Map();
   const claim = (n, where) => { if (!n) return; if (names.has(n)) err(`"${n}" used by ${names.get(n)} and ${where}`); else names.set(n, where); };
-  if (!IDENT.test(spec.set.name || "")) err("Set internal name is not a valid identifier");
-  spec.powers.forEach(p => { if (!IDENT.test(p.name || "")) err(`Power "${p.display}" has an invalid internal name`); claim(p.name, `power ${p.display}`); });
-  spec.pets.forEach(pet => {
+  if (spec.set && !IDENT.test(spec.set.name || "")) err("Set internal name is not a valid identifier");
+  (spec.powers || []).forEach(p => { if (!IDENT.test(p.name || "")) err(`Power "${p.display}" has an invalid internal name`); claim(p.name, `power ${p.display}`); });
+  const cw = spec.custom_weapons;
+  if (cw) {
+    if (!IDENT.test(cw.family || "")) err("Weapon family is not a valid identifier");
+    const known = weaponTemplates[cw.template_family] || new Set();
+    (cw.weapons || []).forEach(w => {
+      if (!IDENT.test(w.name || "")) err(`Weapon "${w.label}": invalid name`);
+      claim(`weapon:${w.name}`, `weapon ${w.label}`);
+      if (!w.template) err(`Weapon "${w.label}": pick a template weapon`);
+      else if (known.size && !known.has(w.template)) warn(`Weapon "${w.label}": template "${w.template}" is not a shipped ${cw.template_family} option`);
+      if (!w.textures?.mask) warn(`Weapon "${w.label}": no color mask set, so it won't take two colors`);
+    });
+  }
+  (spec.pets || []).forEach(pet => {
     if (!IDENT.test(pet.villain || "")) err(`${pet.label}: invalid villain name`);
     claim(pet.villain, pet.label);
     if (pet.kit) claim(pet.kit, `${pet.label} kit`);
@@ -384,20 +447,26 @@ function refreshIssues() {
 // ---------- shell ----------
 function renderNav() {
   const link = (id, text, extra) => h("a", { href: "#" + id, class: view === id ? "active" : "", onclick: e => { e.preventDefault(); view = id; location.hash = id; render(); } }, text, extra);
-  $("#nav").replaceChildren(
-    h("div", { class: "group" }, "Set"), link("set", "Overview"), link("powers", "Powers", h("span", { class: "tag" }, spec.powers.length)),
-    h("div", { class: "group" }, "Henchmen"),
-    ...spec.pets.map(p => link("pet-" + p.id, p.label, p.tier ? h("span", { class: "tag" }, "T" + p.tier) : h("span", { class: "tag" }, "wisp"))),
-    h("div", { class: "group" }, "Output"), link("generate", "Generate patch"));
+  const items = [];
+  if (spec.set) items.push(h("div", { class: "group" }, "Set"), link("set", "Overview"), link("powers", "Powers", h("span", { class: "tag" }, (spec.powers || []).length)));
+  if (spec.pets?.length) items.push(h("div", { class: "group" }, "Henchmen"),
+    ...spec.pets.map(p => link("pet-" + p.id, p.label, p.tier ? h("span", { class: "tag" }, "T" + p.tier) : h("span", { class: "tag" }, "wisp"))));
+  items.push(h("div", { class: "group" }, "Weapons"), spec.custom_weapons
+    ? link("weapons", "Custom weapons", h("span", { class: "tag" }, spec.custom_weapons.weapons.length))
+    : h("a", { href: "#weapons", onclick: e => { e.preventDefault(); spec.custom_weapons = { family: "", template_family: "AssaultRifle", menu_file: "menu/costume/localized/{body}/all/weapons/inc_weapons_assaultrifles.ctm", weapons: [] }; markDirty(); view = "weapons"; render(); } }, "+ Add custom weapons"));
+  items.push(h("div", { class: "group" }, "Output"), link("generate", "Generate patch"));
+  $("#nav").replaceChildren(...items);
 }
 
 function render() {
   renderNav();
   let content;
-  if (view === "set") content = viewSet();
-  else if (view === "powers") content = viewPowers();
+  if (view === "set" && spec.set) content = viewSet();
+  else if (view === "powers" && spec.powers) content = viewPowers();
+  else if (view === "weapons" && spec.custom_weapons) content = viewWeapons();
   else if (view === "generate") content = viewGenerate();
-  else content = viewPet(spec.pets.find(p => "pet-" + p.id === view) || spec.pets[0]);
+  else if (spec.pets?.length) content = viewPet(spec.pets.find(p => "pet-" + p.id === view) || spec.pets[0]);
+  else content = spec.custom_weapons ? viewWeapons() : viewGenerate();
   $("#main").replaceChildren(...[content].flat(2));
   refreshIssues();
 }
@@ -417,25 +486,50 @@ function fillDatalist(id, items, limit = 25000) {
   dl.replaceChildren(frag);
 }
 
+async function loadSpecList() {
+  const { specs, active } = await fetch("/api/specs").then(r => r.json());
+  const sel = $("#specSelect");
+  sel.replaceChildren(...specs.map(n => h("option", { value: n, selected: n === active }, n)));
+}
+
+async function switchSpec(name) {
+  if (dirty && !confirm("Discard unsaved changes?")) { await loadSpecList(); return; }
+  const r = await fetch("/api/active", { method: "PUT", body: JSON.stringify({ spec: name }) });
+  if (!r.ok) { alert((await r.json()).error); return; }
+  spec = await fetch("/api/spec").then(r => r.json());
+  dirty = false;
+  $("#status").textContent = "Loaded " + name;
+  $("#status").className = "";
+  view = spec.set ? "set" : "weapons";
+  render();
+}
+
 async function boot() {
   const [s, c] = await Promise.all([fetch("/api/spec").then(r => r.json()), fetch("/catalog.json").then(r => r.ok ? r.json() : {})]);
   spec = s;
   for (const k of ["costumes", "powers", "fx", "icons"]) catalog[k] = new Set(c[k] || []);
+  // Shipped custom weapons, by family: fx/WEAPONS/Custom_<Family>/Male_<Family>_<Name>.fx
+  for (const f of c.fx || []) {
+    const m = f.match(/^fx\/WEAPONS\/Custom_([A-Za-z]+)\/Male_\1_(.+)\.fx$/i);
+    if (m) (weaponTemplates[m[1]] ??= new Set()).add(m[2]);
+  }
+  await loadSpecList();
+  $("#specSelect").addEventListener("change", e => switchSpec(e.target.value));
   fillDatalist("dl-costumes", c.costumes || []);
-  fillDatalist("dl-petpowers", (c.powers || []).filter(p => p.startsWith(spec.template.pet_category + ".")));
+  fillDatalist("dl-petpowers", (c.powers || []).filter(p => p.startsWith((spec.template?.pet_category || "Mastermind_Pets") + ".")));
   fillDatalist("dl-icons", c.icons || []);
   fillDatalist("dl-fx", c.fx || []);
   fillDatalist("dl-classes", c.classes || []);
   fillDatalist("dl-ai", c.ai_configs || []);
   if (!c.costumes) $("#status").textContent = "No catalog: run tools\\build_catalog.py";
   else $("#status").textContent = "Loaded";
-  view = location.hash.slice(1) || "set";
+  view = location.hash.slice(1) || (spec.set ? "set" : "weapons");
   render();
 }
 
 $("#saveBtn").addEventListener("click", save);
 $("#exportBtn").addEventListener("click", () => {
-  const a = h("a", { href: URL.createObjectURL(new Blob([JSON.stringify(spec, null, 2)], { type: "application/json" })), download: `${spec.set.name}.json` });
+  const a = h("a", { href: URL.createObjectURL(new Blob([JSON.stringify(spec, null, 2)], { type: "application/json" })), download: `${spec.set?.name || spec.custom_weapons?.family || "spec"}.json` });
   a.click();
 });
 $("#importFile").addEventListener("change", async e => {
@@ -443,7 +537,7 @@ $("#importFile").addEventListener("change", async e => {
   if (!file) return;
   try {
     const next = JSON.parse(await file.text());
-    if (next.schema !== 1 || !Array.isArray(next.pets)) throw new Error("not a schema-1 spec");
+    if (next.schema !== 1 || !(Array.isArray(next.pets) || next.custom_weapons)) throw new Error("not a schema-1 spec");
     spec = next; markDirty(); render();
   } catch (err) { alert("Import failed: " + err.message); }
   e.target.value = "";
