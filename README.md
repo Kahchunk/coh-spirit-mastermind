@@ -32,6 +32,9 @@ editor/                    local editor (http://localhost:8765) + catalog.json o
 tools/generate.py          spec + maintainers' source tree -> patch files + REPORT.md
 tools/build_catalog.py     reads your installed client's .pigg archives to build editor/catalog.json
 tools/cryptic_text.py      format-preserving editor for Cryptic textparser files
+tools/extract_refs.py      pull reference textures (PNG) and models (OBJ, experimental) from the client
+tools/geo.py, texture.py   readers for the game's .geo models and .texture images
+art/                       custom model workspace + art spec (see art/README.md)
 tests/                     unit tests over a SYNTHETIC fixture (stand-in for the real defs)
 ```
 

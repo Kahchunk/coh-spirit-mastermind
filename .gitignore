@@ -3,3 +3,4 @@ spec/history/
 editor/local_config.json
 tests/fixture/out/
 __pycache__/
+art/reference/
