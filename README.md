@@ -74,9 +74,9 @@ python tools/generate.py --data <data root> --out out
 
 Output in `out/`, with `REPORT.md` listing every file, the template-to-new identifier map, and:
 
-- **Errors** – anything still wired to Necromancy (a summon still creating zombies, an upgrade
+- **Errors**: anything still wired to Necromancy (a summon still creating zombies, an upgrade
   targeting a template pet, a template costume left on a cloned villain). Exit code is 1 if any exist.
-- **Warnings** – fields that weren't in the template block and were added (likely a field-name
+- **Warnings**: fields that weren't in the template block and were added (likely a field-name
   mismatch), and an "art pass" list of icons/FX/power names still using Necromancy art.
 
 New files: `Mastermind_Summon_Spirit_Binding.powers`, `Mastermind_Pets_<kit>[_2|_3].powers`,

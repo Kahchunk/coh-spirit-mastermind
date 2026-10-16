@@ -71,7 +71,7 @@ pre { white-space: pre-wrap; background: var(--field); border: 1px solid var(--l
 <body>
 <header>
   <h1>Spirit Set Editor</h1>
-  <span id="status">Loading…</span>
+  <span id="status">Loading...</span>
   <span class="spacer"></span>
   <span id="issueCount" class="tag"></span>
   <label class="btn" style="flex-direction:row">Import JSON<input id="importFile" type="file" accept=".json,application/json" hidden></label>
@@ -263,13 +263,13 @@ function kitCard(pet, kitPrefix) {
   pet.kit_overrides ??= [];
   const body = h("tbody");
   const draw = () => body.replaceChildren(...pet.kit_overrides.map((o, i) => h("tr", {},
-    h("td", {}, field("", o, "template", { list: "dl-petpowers", tag: powerTag, placeholder: `${kitPrefix}.…` })),
+    h("td", {}, field("", o, "template", { list: "dl-petpowers", tag: powerTag, placeholder: `${kitPrefix}....` })),
     h("td", {}, field("", o, "name", { ident: true, placeholder: "keep name" })),
     h("td", {}, field("", o, "from", { list: "dl-petpowers", tag: powerTag, placeholder: "keep template body" })),
     h("td", {}, h("button", { class: "small ghost", onclick: () => { pet.kit_overrides.splice(i, 1); markDirty(); draw(); } }, "remove")))));
   draw();
   return h("div", { class: "card" },
-    h("h3", {}, "Power kit", h("span", { class: "tag" }, `${kitPrefix}, _2, _3 → ${spec.template.pet_category}.${pet.kit}…`)),
+    h("h3", {}, "Power kit", h("span", { class: "tag" }, `${kitPrefix}, _2, _3 -> ${spec.template.pet_category}.${pet.kit}...`)),
     h("p", { class: "sub" }, "Every template kit power is cloned. Override one to rename it or take its body from another power (for example the ghost attacks)."),
     h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "Template power"), h("th", {}, "New name"), h("th", {}, "Take body from"), h("th"))), body),
     h("button", { class: "small", onclick: () => { pet.kit_overrides.push({ template: "", name: "", from: "" }); markDirty(); draw(); } }, "+ override"));
@@ -291,7 +291,7 @@ function costumeCard(pet, c, idx) {
         h("strong", {}, `Part override ${i + 1}`),
         h("button", { class: "small ghost", onclick: () => { c.parts.splice(i, 1); markDirty(); drawParts(); } }, "remove")),
       h("div", { class: "grid" },
-        field("Which part", p, "select", { placeholder: "* · #0 · RegionName=Head" }),
+        field("Which part", p, "select", { placeholder: "* | #0 | RegionName=Head" }),
         field("Geometry (your model)", p.fields, "Geometry", { optional: true, placeholder: "keep" }),
         field("Texture 1", p.fields, "Texture1", { optional: true, placeholder: "keep" }),
         field("Texture 2", p.fields, "Texture2", { optional: true, placeholder: "keep" }),
@@ -326,7 +326,7 @@ function viewGenerate() {
   const run = async () => {
     if (dirty) await save();
     await fetch("/api/config", { method: "PUT", body: JSON.stringify({ data_root: input.value.trim() }) });
-    result.replaceChildren(h("p", {}, "Generating…"));
+    result.replaceChildren(h("p", {}, "Generating..."));
     const r = await fetch("/api/generate", { method: "POST" });
     const j = await r.json();
     if (!r.ok) { result.replaceChildren(h("p", { class: "tag err" }, j.error)); return; }
@@ -334,7 +334,7 @@ function viewGenerate() {
       h("div", { class: "row", style: "margin-bottom:8px" },
         h("span", { class: "tag " + (j.errors.length ? "err" : "ok") }, `${j.errors.length} errors`),
         h("span", { class: "tag warn" }, `${j.warnings.length} warnings`),
-        h("span", { class: "tag" }, `${j.files.length} files → ${j.out}`)),
+        h("span", { class: "tag" }, `${j.files.length} files -> ${j.out}`)),
       h("pre", {}, j.report));
   };
   return [

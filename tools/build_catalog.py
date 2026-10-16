@@ -58,7 +58,7 @@ def build(client):
     ai = sorted({x for x in s["VillainDef.bin"] if re.match(r"^Pets_[A-Za-z]+$", x)})
 
     catalog = {
-        "source": client,
+        "source": "Rebirth client (Sweet Tea launcher)",
         "costumes": costumes,
         "villains": villains,
         "powers": powers,
