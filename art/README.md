@@ -56,6 +56,20 @@ Read from the client's costume data:
 | Skeletons | male / fem / huge base poses in `animations/<body>/skel_ready2.anim` | `stage1a.pigg` |
 | Scale | the male chest is about 3.4 units wide arm to arm in T-pose, so 1 unit is roughly 1 foot (unconfirmed) | decoded `MALE_SHIRT` |
 
+## Art budget (OuroDev costume guide, adapted from Thunderspy's docs)
+
+- No more than **1500 triangles** per costume piece.
+- No texture larger than **1024**.
+- Normal maps: flip the **green channel**.
+- Assign textures in Max before export; otherwise the piece renders white in game.
+
+## ScrapYarder master files
+
+`SM_Master` (standard male), plus the female and huge versions, hold the player skeleton in T-pose with
+hundreds of leftover developer costumes. Keep them in `art/scrapyard/`, which is **gitignored**. They're
+original studio files and must never land in this public repo (`*.max` is ignored too). Open them in Max
+2015, or better, use a cleaned bones-and-base-body copy.
+
 ## Pipeline (per OuroDev docs + Rebirth; to confirm with SilverAgeFan)
 
 1. Model and UV in Blender, then bring the mesh into **3ds Max 2015** as FBX.
