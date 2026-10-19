@@ -1,0 +1,25 @@
+{
+  "id": "com.kahchunk.cohpreview",
+  "name": "CoH Preview",
+  "version": "1.0.0",
+  "main": "index.html",
+  "manifestVersion": 5,
+  "host": {
+    "app": "PS",
+    "minVersion": "24.2.0"
+  },
+  "entrypoints": [
+    {
+      "type": "panel",
+      "id": "cohPreviewPanel",
+      "label": { "default": "CoH Preview" },
+      "minimumSize": { "width": 240, "height": 200 },
+      "maximumSize": { "width": 2400, "height": 2000 },
+      "preferredDockedSize": { "width": 360, "height": 460 },
+      "preferredFloatingSize": { "width": 760, "height": 520 }
+    }
+  ],
+  "requiredPermissions": {
+    "localFileSystem": "fullAccess"
+  }
+}

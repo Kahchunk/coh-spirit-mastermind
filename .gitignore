@@ -11,3 +11,6 @@ art/work/bridge.log
 art/work/example_*/
 art/work/**/*.obj
 art/work/.preview_base.blend*
+tools/photoshop/dist/
+art/work/.preview_request.txt*
+art/work/max_bridge.log

@@ -1,7 +1,7 @@
 @echo off
 title CoH Art Bridge
 cd /d "%~dp0.."
-echo CoH Art Bridge - open a part's .psd from art\work in Photoshop and it shows up in Blender.
+echo CoH Art Bridge - open a part's .psd from art\work in Photoshop; 3ds Max renders it for the CoH Preview panel.
 echo Leave this window open while you work. Close it to stop.
 echo.
 python tools\art_bridge.py run

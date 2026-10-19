@@ -98,12 +98,25 @@ transparency.
 Each original PSD keeps every map for one part in named layer groups: visible layers (color/detail),
 `Bump`, `Spec` and `Mask`. Toggle a group on and export it to get that map.
 
-## Live preview: CoH Art Bridge (Photoshop -> Blender)
+## Live preview: CoH Art Bridge (Photoshop + 3ds Max)
 
 1. Double-click **CoH Art Bridge** on the desktop (or `tools/CoH Art Bridge.cmd`). Leave its window open.
-2. In Photoshop, open a part's `.psd` from `art/work/<part>/`. Blender opens that part's model, colored
-   the way the game will color it.
-3. Paint and **save** (Ctrl+S). Blender updates within about a second.
+2. In Photoshop, open a part's `.psd` from `art/work/<part>/`. 3ds Max 2015 opens (first time only, about
+   a minute) and loads the part with the game's tint applied, in perspective/top/front/right viewports.
+3. Paint and **save** (Ctrl+S). Max reloads the textures and re-renders a preview sheet: both
+   isometric corners plus front, back, left, right, top and bottom.
+4. The **CoH Preview** panel in Photoshop (Window > Plugins) shows that sheet, so you can work on one
+   screen. It also sets the look (Flat / Lit / Ghostly / Croatoa dusk) and Color1/Color2, with a
+   "Use foreground" button for each.
+
+Install the panel once: run `python tools/photoshop/package_plugin.py`, then double-click
+`tools/photoshop/dist/coh-preview.ccx`. If Creative Cloud refuses an unsigned plugin, load
+`tools/photoshop/coh-preview/manifest.json` with Adobe's **UXP Developer Tool** (Add Plugin > Load).
+
+The looks are approximations: the Spirit glow comes from the game effect `Ghost_Ship_Enemies.fx`
+attached to their body type, and in-game lighting varies by zone. The test server is the final word.
+
+Blender still works as a fallback (`set COH_BACKEND=blender` before starting the bridge).
 
 Each part folder holds `<part>.psd`, `<part>.obj`, and `part.json` (preview colors). The PSD uses
 these layer groups:
@@ -115,7 +128,7 @@ these layer groups:
 | `Bump`, `Spec` | game maps, ignored by the preview |
 | `UV guide` layer | your paint guide; never exported |
 
-Try Color1/Color2 in Blender on the "CoH Tint" material's color nodes; set defaults in `part.json`.
+`part.json` stores the preview settings (`color1`, `color2`, `look`, `ghost_opacity`); the panel edits it.
 
 New part from a game mesh (the starter PSD gets the groups and a UV guide):
 

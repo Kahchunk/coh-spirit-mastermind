@@ -77,6 +77,20 @@ class Part:
     def mask_png(self):
         return os.path.join(self.preview, "mask.png")
 
+    @property
+    def sheet_png(self):
+        return os.path.join(self.preview, "sheet.png")
+
+    @property
+    def cfg_path(self):
+        return os.path.join(self.folder, "part.json")
+
+    def read_cfg(self):
+        try:
+            return json.load(open(self.cfg_path, encoding="utf-8"))
+        except (OSError, ValueError):
+            return {}
+
 
 def find_parts():
     if not os.path.isdir(WORK):
@@ -91,6 +105,36 @@ def find_parts():
 
 # ---------- PSD export ----------
 
+def _stack(psd, layers):
+    """Normal-blend the given pixel layers bottom-to-top. psd-tools' compositor returns blank
+    images for layers it created itself, so new starter PSDs need this until Photoshop resaves them."""
+    canvas = Image.new("RGBA", psd.size, (0, 0, 0, 0))
+    for lay in layers:
+        img = lay.topil()
+        if img is None:
+            continue
+        img = img.convert("RGBA")
+        if lay.opacity < 255:
+            img.putalpha(img.getchannel("A").point(lambda a: a * lay.opacity // 255))
+        canvas.alpha_composite(img, dest=lay.offset)
+    return canvas
+
+
+def _composite(psd, members, force=False):
+    img = psd.composite(force=force, layer_filter=lambda l: id(l) in members)
+    if img is None or (img.mode == "RGBA" and img.getchannel("A").getextrema()[1] == 0):
+        ordered = [l for l in psd.descendants() if id(l) in members and not l.is_group()
+                   and (force or l.is_visible())]
+        img = _stack(psd, ordered)
+    return img
+
+
+def _flatten(img, background=(0, 0, 0)):
+    flat = Image.new("RGB", img.size, background)
+    flat.paste(img, mask=img.getchannel("A") if img.mode == "RGBA" else None)
+    return flat
+
+
 def export_maps(part):
     """Write .preview/color.png (+ mask.png) from the PSD's layer groups."""
     psd = PSDImage.open(part.psd)
@@ -101,19 +145,15 @@ def export_maps(part):
         if id(l) in excluded and l.is_group():
             excluded |= {id(c) for c in l.descendants()}
 
-    color = psd.composite(layer_filter=lambda l: id(l) not in excluded and l.is_visible())
+    color_members = {id(l) for l in psd.descendants() if id(l) not in excluded}
     os.makedirs(part.preview, exist_ok=True)
-    _save_atomic(color.convert("RGB"), part.color_png)
+    _save_atomic(_flatten(_composite(psd, color_members), (128, 128, 128)), part.color_png)
 
     has_mask = False
     if mask_group is not None and any(not c.is_group() for c in mask_group.descendants()):
         members = {id(c) for c in mask_group.descendants()} | {id(mask_group)}
-        mask = psd.composite(force=True, layer_filter=lambda l: id(l) in members)
-        if mask is not None:
-            flat = Image.new("RGB", mask.size, (0, 0, 0))
-            flat.paste(mask, mask=mask.getchannel("A") if mask.mode == "RGBA" else None)
-            _save_atomic(flat, part.mask_png)
-            has_mask = True
+        _save_atomic(_flatten(_composite(psd, members, force=True)), part.mask_png)
+        has_mask = True
     if not has_mask and os.path.exists(part.mask_png):
         os.remove(part.mask_png)
     return has_mask
@@ -161,6 +201,85 @@ def open_in_blender(part, has_mask):
     log(f"{part.name}: opened in Blender")
 
 
+# ---------- 3ds Max (default backend) ----------
+
+MAX_EXE = os.environ.get("COH_MAX_EXE", os.path.join(r"C:\Program Files", "Autodesk", "3ds Max 2015", "3dsmax.exe"))
+MAX_SCRIPT = os.path.join(ROOT, "tools", "max", "coh_bridge.ms")
+REQUEST = os.path.join(WORK, ".preview_request.txt")
+BACKEND = os.environ.get("COH_BACKEND", "max")
+_max_proc = None
+
+
+def hex_to_rgb255(h):
+    h = h.lstrip("#")
+    return ",".join(str(int(h[i:i + 2], 16)) for i in (0, 2, 4))
+
+
+def write_request(part):
+    """Tell the Max-side script (tools/max/coh_bridge.ms) what to show and how to color it."""
+    cfg = part.read_cfg()
+    lines = {
+        "part": part.name,
+        "obj": part.mesh or "",
+        "color": part.color_png,
+        "mask": part.mask_png if os.path.exists(part.mask_png) else "",
+        "sheet": part.sheet_png,
+        "color1": hex_to_rgb255(cfg.get("color1", "#b0d8ff")),
+        "color2": hex_to_rgb255(cfg.get("color2", "#2a6f8f")),
+        "look": cfg.get("look", "FLAT"),
+        "ghost_opacity": str(int(float(cfg.get("ghost_opacity", 0.55)) * 100)),
+    }
+    tmp = REQUEST + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.writelines(f"{k}={v}\n" for k, v in lines.items())
+    os.replace(tmp, REQUEST)
+
+
+def close_max_welcome():
+    """Max 2015's Welcome Screen blocks rendering while it's open; close it if it shows up."""
+    try:
+        import win32con
+        import win32gui
+        hwnd = win32gui.FindWindow(None, "Welcome to 3ds Max")
+        if hwnd and win32gui.IsWindowVisible(hwnd):
+            win32gui.PostMessage(hwnd, win32con.WM_CLOSE, 0, 0)
+            log("closed 3ds Max's Welcome Screen")
+    except Exception:
+        pass
+
+
+def max_running():
+    out = subprocess.run(["tasklist", "/FI", "IMAGENAME eq 3dsmax.exe", "/NH"], capture_output=True, text=True).stdout
+    return "3dsmax.exe" in out
+
+
+def open_in_max(part):
+    global _max_proc
+    if not part.mesh:
+        log(f"{part.name}: no .obj in the folder, nothing to show")
+        return
+    write_request(part)
+    if _max_proc and _max_proc.poll() is None:
+        return
+    if max_running():
+        if _max_proc is None:
+            log("3ds Max is already open. If the preview doesn't load, run MAXScript > Run Script > "
+                "tools/max/coh_bridge.ms once in that Max.")
+            _max_proc = False  # don't nag again
+        return
+    flags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) | getattr(subprocess, "DETACHED_PROCESS", 0)
+    _max_proc = subprocess.Popen([MAX_EXE, "-U", "MAXScript", MAX_SCRIPT], creationflags=flags,
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    log("starting 3ds Max (first launch takes a minute)")
+
+
+def open_preview(part):
+    if BACKEND == "blender":
+        open_in_blender(part, os.path.exists(part.mask_png))
+    else:
+        open_in_max(part)
+
+
 # ---------- Photoshop ----------
 
 def photoshop_active_doc():
@@ -203,7 +322,7 @@ def match_part(doc, parts):
 def run():
     os.makedirs(WORK, exist_ok=True)
     log(f"watching {WORK}  (Ctrl+C to stop)")
-    mtimes, last_doc = {}, None
+    mtimes, last_doc, active, cfg_stamp = {}, None, None, None
     while True:
         parts = find_parts()
         for p in parts:
@@ -226,8 +345,20 @@ def run():
         part = match_part(doc, parts)
         if part and doc != last_doc:
             log(f"Photoshop: {os.path.basename(doc)}")
-            open_in_blender(part, os.path.exists(part.mask_png))
+            open_preview(part)
+            active = part
         last_doc = doc
+        if BACKEND != "blender":
+            close_max_welcome()
+        # Colors/look edited in the Photoshop panel land in part.json; pass them on.
+        if active and BACKEND != "blender":
+            try:
+                stamp = (os.path.getmtime(active.cfg_path), os.path.exists(active.mask_png))
+            except OSError:
+                stamp = None
+            if stamp != cfg_stamp:
+                cfg_stamp = stamp
+                write_request(active)
         time.sleep(POLL_SECONDS)
 
 
