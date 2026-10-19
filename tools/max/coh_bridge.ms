@@ -164,7 +164,16 @@ fn cohFrameViewports =
 		viewport.SetShowEdgeFaces false
 	)
 	viewport.activeViewport = 1
-	max zoomext sel all
+	-- Frame the mesh only; plain Zoom Extents also fits the light icons, which dwarf small props.
+	-- "zoomext sel all" skipped the fourth viewport, so frame each one while it is active.
+	select (geometry as array)
+	for i = 1 to 4 do
+	(
+		viewport.activeViewport = i
+		viewport.SetRenderLevel #smoothhighlights
+		max zoomext sel
+	)
+	viewport.activeViewport = 1
 	clearSelection()
 	completeRedraw()
 )
@@ -209,11 +218,66 @@ fn cohRenderSheet st req =
 	true
 )
 
+-- Build the mesh ourselves instead of using Max's OBJ importer: the importer welds vertices that
+-- share a position, but CoH splits vertices along hard edges and UV seams, so welding smooths
+-- across those edges (dark diagonal halves on flat faces). Vertices, UVs and the game's normals
+-- are kept exactly. OBJ is Y-up; Max is Z-up, so (x, y, z) -> (x, -z, y).
+fn cohImportObj path =
+(
+	local verts = #(), tverts = #(), norms = #(), faces = #()
+	local f = openFile path mode:"r"
+	if f == undefined then return undefined
+	while not eof f do
+	(
+		local tok = filterString (readLine f) " "
+		if tok.count > 0 do
+		(
+			case tok[1] of
+			(
+				"v": append verts [tok[2] as float, -(tok[4] as float), tok[3] as float]
+				"vt": append tverts [tok[2] as float, tok[3] as float, 0]
+				"vn": append norms (normalize [tok[2] as float, -(tok[4] as float), tok[3] as float])
+				"f": append faces [(filterString tok[2] "/")[1] as integer, (filterString tok[3] "/")[1] as integer, (filterString tok[4] "/")[1] as integer]
+			)
+		)
+	)
+	close f
+	local m = mesh vertices:verts faces:faces name:(getFilenameFile path)
+	for i = 1 to faces.count do setFaceSmoothGroup m i 1
+	if tverts.count == verts.count do
+	(
+		setNumTVerts m tverts.count
+		for i = 1 to tverts.count do setTVert m i tverts[i]
+		buildTVFaces m
+		for i = 1 to faces.count do setTVFace m i faces[i]
+	)
+	update m
+	if norms.count == verts.count do
+	(
+		-- Edit Normals needs the object selected in the Modify panel.
+		select m
+		max modify mode
+		local en = Edit_Normals()
+		addModifier m en
+		modPanel.setCurrentObject en
+		for fi = 1 to faces.count do
+			for c = 1 to 3 do
+			(
+				local nid = en.GetNormalID fi c
+				en.SetNormal nid norms[en.GetVertexID fi c]
+				en.SetNormalExplicit nid explicit:true
+			)
+		max create mode
+		clearSelection()
+	)
+	m
+)
+
 fn cohLoadPart st req =
 (
 	resetMaxFile #noPrompt
 	local obj = cohGet req "obj" ""
-	importFile obj #noPrompt
+	cohImportObj obj
 	cohLights st
 	st.material = cohBuildMaterial st req
 	for g in geometry do g.material = st.material
