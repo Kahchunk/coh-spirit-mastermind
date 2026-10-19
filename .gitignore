@@ -6,3 +6,8 @@ __pycache__/
 art/reference/
 art/scrapyard/
 *.max
+art/work/*/.preview/
+art/work/bridge.log
+art/work/example_*/
+art/work/**/*.obj
+art/work/.preview_base.blend*

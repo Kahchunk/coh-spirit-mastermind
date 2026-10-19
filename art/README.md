@@ -98,17 +98,33 @@ transparency.
 Each original PSD keeps every map for one part in named layer groups: visible layers (color/detail),
 `Bump`, `Spec` and `Mask`. Toggle a group on and export it to get that map.
 
-## Live preview (Photoshop -> Blender)
+## Live preview: CoH Art Bridge (Photoshop -> Blender)
+
+1. Double-click **CoH Art Bridge** on the desktop (or `tools/CoH Art Bridge.cmd`). Leave its window open.
+2. In Photoshop, open a part's `.psd` from `art/work/<part>/`. Blender opens that part's model, colored
+   the way the game will color it.
+3. Paint and **save** (Ctrl+S). Blender updates within about a second.
+
+Each part folder holds `<part>.psd`, `<part>.obj`, and `part.json` (preview colors). The PSD uses
+these layer groups:
+
+| Group | Used for |
+|---|---|
+| `Color` | grayscale detail (or full color for NPC-only pieces) |
+| `Mask` | black = Color1, white = Color2; leave empty for no tint |
+| `Bump`, `Spec` | game maps, ignored by the preview |
+| `UV guide` layer | your paint guide; never exported |
+
+Try Color1/Color2 in Blender on the "CoH Tint" material's color nodes; set defaults in `part.json`.
+
+New part from a game mesh (the starter PSD gets the groups and a UV guide):
 
 ```bash
-"C:/Program Files/Blender Foundation/Blender 3.6/blender.exe" --python tools/blender/coh_live_preview.py -- --obj art/reference/preview/rifle01.obj --base art/reference/preview/rifle01_base.png --mask art/reference/preview/rifle01_mask.png
+python tools/art_bridge.py new spirit_chest --game "player_library/MALE_SHIRT.geo" --mesh GEO_Chest_Tight
 ```
 
-Blender opens with the mesh using the game's tint math: Color1 and Color2 are color nodes on the
-"CoH Tint" material. Any texture file you save is reloaded within about a second. For live
-Photoshop updates, name layer groups after the PNG files (e.g. `rifle01_base.png`,
-`rifle01_mask.png`) and enable **File > Generate > Image Assets**. Photoshop then rewrites those
-files on every edit. Omit `--mask` for full-color pieces like `spirit_face.png` on `spirit_head.obj`.
+New part from your own model: `--obj path/to/model.obj`. Two examples (a tintable rifle and the
+Spirit face) are created with `python tools/art_bridge.py examples`.
 
 ## Weapon color masks (how shipped weapons do it)
 
