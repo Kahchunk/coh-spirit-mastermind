@@ -26,10 +26,9 @@ python tools/extract_refs.py geo "player_library/MALE_SHIRT\.geo"
 python tools/extract_refs.py list "Croatoa"
 ```
 
-Textures come out as PNG. Models come out as OBJ (LOD0 only). The model export is **experimental**:
-triangles, UVs and normals decode correctly, but skinned parts aren't placed on the skeleton yet,
-so arms can look folded or offset. A legacy `.geo` + `.wrl` pair from SilverAgeFan will let us
-check positions against known values and fix that.
+Textures come out as PNG. Models come out as OBJ (LOD0 only), in their T-pose bind position,
+with UVs. The decoder follows GetVrml's `compressDeltas` (OuroDev source), so geometry matches
+the game. Bone weights are read but not exported to OBJ.
 
 ## What the Croatoa ghosts actually are
 

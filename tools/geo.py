@@ -68,7 +68,8 @@ def uncompress_deltas(src, stride, count, is_float, int_plus=1):
                 pos += 4
             if is_float:
                 if code == 3:
-                    val = struct.unpack("<f", struct.pack("<i", ival))[0]
+                    # A raw float *delta*, not an absolute value (GetVrml output.c compressDeltas).
+                    val = struct.unpack("<f", struct.pack("<i", ival))[0] + last[j]
                 else:
                     val = ival * inv + last[j]
             else:

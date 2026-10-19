@@ -6,8 +6,8 @@ usage:
   python tools/extract_refs.py list "Croatoa"                    # just list matching entries
 
 Game assets stay on your machine; never commit art/reference/.
-The .geo export is EXPERIMENTAL: meshes decode cleanly (triangles, UVs, normals verified) but
-skinned body parts are not yet placed on the skeleton, so limbs can appear folded or offset.
+Models export in their T-pose bind position with UVs and normals (decoder follows GetVrml's
+compressDeltas). Bone weights are not written to the OBJ.
 """
 import glob
 import os

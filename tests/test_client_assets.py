@@ -44,6 +44,12 @@ class ClientAssetTests(unittest.TestCase):
         self.assertIn("GEO_Chest_Tight", [m.name for m in self.models])
         self.assertTrue(all(m.name.startswith("GEO_") for m in self.models))
 
+    def test_shirt_is_left_right_symmetric(self):
+        # Mis-decoded 4-byte deltas once folded one sleeve; a correct T-pose shirt mirrors in X.
+        tight = next(m for m in self.models if m.name == "GEO_Chest_Tight")
+        xs = [v[0] for v in tight.verts]
+        self.assertAlmostEqual(min(xs), -max(xs), delta=0.01)
+
     def test_ghost_face_texture_converts(self):
         found = extract_refs.matches("textures", r"Croatoa/Ghosts/Face_Skin_Croatoa_Ghost_02")
         img = texture_to_image(next(iter(found.values()))[1])
