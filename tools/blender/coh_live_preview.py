@@ -111,9 +111,29 @@ def watch_images():
     return WATCH_SECONDS
 
 
+def clear_scene():
+    for o in list(bpy.data.objects):
+        bpy.data.objects.remove(o, do_unlink=True)
+
+
+def import_obj(path):
+    window = bpy.context.window_manager.windows[0] if bpy.context.window_manager.windows else None
+    if window is None:
+        bpy.ops.wm.obj_import(filepath=path, forward_axis="NEGATIVE_Z", up_axis="Y")
+        return
+    # With the UI open, operators need a real window/area to run in.
+    area = next((a for a in window.screen.areas if a.type == "VIEW_3D"), window.screen.areas[0])
+    with bpy.context.temp_override(window=window, area=area):
+        bpy.ops.wm.obj_import(filepath=path, forward_axis="NEGATIVE_Z", up_axis="Y")
+
+
 def build(args):
-    bpy.ops.wm.read_factory_settings(use_empty=True)
-    bpy.ops.wm.obj_import(filepath=os.path.abspath(args.obj), forward_axis="NEGATIVE_Z", up_axis="Y")
+    if bpy.app.background:
+        bpy.ops.wm.read_factory_settings(use_empty=True)
+    else:
+        # Keep the open UI; resetting factory settings here would tear down the window.
+        clear_scene()
+    import_obj(os.path.abspath(args.obj))
     mat = tint_material(args.base, args.mask, args.color1, args.color2)
     for o in bpy.context.scene.objects:
         if o.type == "MESH":
@@ -140,14 +160,25 @@ def main():
     ap.add_argument("--color2", default="#2a6f8f")
     ap.add_argument("--save")
     args = ap.parse_args(argv)
-    build(args)
-    if not bpy.app.background:
-        bpy.app.timers.register(watch_images, persistent=True)
-        # Show the material in the viewport.
+    if bpy.app.background:
+        build(args)
+        return
+
+    # --python runs before Blender's window exists; build once the UI is up.
+    def start():
+        build(args)
         for window in bpy.context.window_manager.windows:
             for area in window.screen.areas:
                 if area.type == "VIEW_3D":
-                    area.spaces[0].shading.type = "MATERIAL"
+                    space = area.spaces[0]
+                    space.shading.type = "MATERIAL"
+                    with bpy.context.temp_override(window=window, area=area,
+                                                   region=next(r for r in area.regions if r.type == "WINDOW")):
+                        bpy.ops.view3d.view_all()
+        bpy.app.timers.register(watch_images, persistent=True)
+        return None
+
+    bpy.app.timers.register(start, first_interval=0.5)
 
 
 if __name__ == "__main__":
