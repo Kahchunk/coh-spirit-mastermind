@@ -81,10 +81,14 @@ def uncompress_deltas(src, stride, count, is_float, int_plus=1):
 
 
 def read_geo(path):
-    data = open(path, "rb").read()
+    return parse_geo(open(path, "rb").read())
+
+
+def parse_geo(data, decode=True):
+    """decode=False reads only names and counts (fast; for listing every model in the client)."""
     zsize, _zero, version, hsize = struct.unpack_from("<4I", data, 0)
     if version not in LAYOUTS:
-        raise ValueError(f"{path}: geo version {version} not supported ({sorted(LAYOUTS)})")
+        raise ValueError(f"geo version {version} not supported ({sorted(LAYOUTS)})")
     record, off_name, off_min, off_max, off_packs = LAYOUTS[version]
     hdr = zlib.decompress(data[16:4 + zsize])
     base = 4 + zsize
@@ -106,14 +110,23 @@ def read_geo(path):
         name_off = struct.unpack_from("<i", rec, off_name)[0]
         mins = struct.unpack_from("<3f", rec, off_min)
         maxs = struct.unpack_from("<3f", rec, off_max)
+        if not decode:
+            m = Model(objnames.get(struct.unpack_from("<i", rec, off_name)[0], f"model_{len(models)}"),
+                      [], [], [], [], b"", b"", None, tex_count)
+            m.nverts, m.ntris = nverts, ntris
+            models.append(m)
+            p += record
+            continue
         packs = [struct.unpack_from("<3i", rec, off_packs + 12 * k) for k in range(len(PACK_NAMES))]
         blobs = {n: _unpack(data, base, *pk) for n, pk in zip(PACK_NAMES, packs)}
         tris = uncompress_deltas(blobs["tris"], 3, ntris, False) if blobs["tris"] else []
         verts = uncompress_deltas(blobs["verts"], 3, nverts, True) if blobs["verts"] else []
         norms = uncompress_deltas(blobs["norms"], 3, nverts, True) if blobs["norms"] else []
         sts = uncompress_deltas(blobs["sts"], 2, nverts, True) if blobs["sts"] else []
-        models.append(Model(objnames.get(name_off, f"model_{len(models)}"), verts, tris, norms, sts,
-                            blobs["weights"], blobs["matidxs"], (mins, maxs), tex_count))
+        m = Model(objnames.get(name_off, f"model_{len(models)}"), verts, tris, norms, sts,
+                  blobs["weights"], blobs["matidxs"], (mins, maxs), tex_count)
+        m.nverts, m.ntris = nverts, ntris
+        models.append(m)
         p += record
     return models
 

@@ -101,8 +101,13 @@ Each original PSD keeps every map for one part in named layer groups: visible la
 ## Live preview: CoH Art Bridge (Photoshop + 3ds Max)
 
 1. Double-click **CoH Art Bridge** on the desktop (or `tools/CoH Art Bridge.cmd`). Leave its window open.
-2. In Photoshop, open a part's `.psd` from `art/work/<part>/`. 3ds Max 2015 opens (first time only, about
-   a minute) and loads the part with the game's tint applied, in perspective/top/front/right viewports.
+   The left side lists every mesh in the installed client (LODs hidden) plus your parts (marked with a star).
+   Type to search, for example `male_shirt chest`. The dropdown switches between costume pieces, your parts,
+   world objects and everything. The right side previews the selection.
+2. Click **Open in Photoshop** (or double-click a row, or press Enter). For a game mesh you haven't started,
+   it creates the part first: the mesh plus a starter PSD with a UV guide. 3ds Max 2015 opens (first time
+   only, about a minute) and loads the part with the game's tint applied, in perspective/top/front/right
+   viewports. Max builds the mesh with the game's own normals, so the shading matches the game.
 3. Paint and **save** (Ctrl+S). Max reloads the textures and re-renders a preview sheet: both
    isometric corners plus front, back, left, right, top and bottom.
 4. The **CoH Preview** panel in Photoshop (Window > Plugins) shows that sheet, so you can work on one
@@ -130,7 +135,7 @@ these layer groups:
 
 `part.json` stores the preview settings (`color1`, `color2`, `look`, `ghost_opacity`); the panel edits it.
 
-New part from a game mesh (the starter PSD gets the groups and a UV guide):
+New part from a game mesh without the app (the starter PSD gets the groups and a UV guide):
 
 ```bash
 python tools/art_bridge.py new spirit_chest --game "player_library/MALE_SHIRT.geo" --mesh GEO_Chest_Tight

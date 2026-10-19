@@ -6,41 +6,55 @@ import zlib
 IDENT = re.compile(rb"[\x20-\x7e]{3,}")
 
 
+def pigg_entries(path):
+    """[(internal_path, size, offset, packed)] from the archive's directory, without reading entry data."""
+    with open(path, "rb") as f:
+        head = f.read(16)
+        marker, _iv, _v, hsize, esize, n = struct.unpack_from("<IHHHHI", head, 0)
+        if marker != 0x123:
+            raise ValueError(f"{path}: not a pigg archive")
+        f.seek(hsize)
+        table = f.read(n * esize + 12)
+        _m, count, tsize = struct.unpack_from("<3I", table, n * esize)
+        strings = f.read(tsize)
+    entries = []
+    for k in range(n):
+        _m, name_id, size, _ts, offset, _r, _hd = struct.unpack_from("<7I", table, k * esize)
+        packed = struct.unpack_from("<I", table, k * esize + 44)[0]
+        entries.append((name_id, size, offset, packed))
+    names, off = [], 0
+    for _ in range(count):
+        ln = struct.unpack_from("<I", strings, off)[0]
+        off += 4
+        names.append(strings[off:off + ln].rstrip(b"\0").decode("latin-1"))
+        off += ln
+    return [(names[i], size, offset, packed) for i, size, offset, packed in entries]
+
+
+def _inflate(raw, packed, size):
+    if not packed:
+        return raw
+    try:
+        return zlib.decompress(raw)
+    except zlib.error:
+        return zlib.decompress(raw[4:])
+
+
+def read_entry(path, size, offset, packed):
+    """One entry's bytes, reading only that entry from disk."""
+    with open(path, "rb") as f:
+        f.seek(offset)
+        return _inflate(f.read(packed or size), packed, size)
+
+
 def read_pigg(path, name_filter=None):
     """Yield (internal_path, bytes) for each entry, optionally filtered by substring."""
     with open(path, "rb") as f:
         data = f.read()
-    marker, _iv, _v, hsize, esize, n = struct.unpack_from("<IHHHHI", data, 0)
-    if marker != 0x123:
-        raise ValueError(f"{path}: not a pigg archive")
-    off = hsize
-    entries = []
-    for _ in range(n):
-        _m, name_id, size, _ts, offset, _r, _hd = struct.unpack_from("<7I", data, off)
-        packed = struct.unpack_from("<I", data, off + 44)[0]
-        entries.append((name_id, size, offset, packed))
-        off += esize
-    _m, count, _tsize = struct.unpack_from("<3I", data, off)
-    off += 12
-    names = []
-    for _ in range(count):
-        ln = struct.unpack_from("<I", data, off)[0]
-        off += 4
-        names.append(data[off:off + ln].rstrip(b"\0").decode("latin-1"))
-        off += ln
-    for name_id, size, offset, packed in entries:
-        name = names[name_id]
+    for name, size, offset, packed in pigg_entries(path):
         if name_filter and name_filter.lower() not in name.lower():
             continue
-        if packed:
-            raw = data[offset:offset + packed]
-            try:
-                blob = zlib.decompress(raw)
-            except zlib.error:
-                blob = zlib.decompress(raw[4:])
-        else:
-            blob = data[offset:offset + size]
-        yield name, blob
+        yield name, _inflate(data[offset:offset + (packed or size)], packed, size)
 
 
 def bin_strings(blob, minlen=3):

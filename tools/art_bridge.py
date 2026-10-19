@@ -405,13 +405,15 @@ def build_psd(path, size, color_img=None, mask_img=None, uv_img=None):
     psd.save(path)
 
 
-def new_part(name, obj=None, game=None, mesh=None, color=None, mask=None, size=512, color1=None, color2=None):
+def new_part(name, obj=None, game=None, mesh=None, color=None, mask=None, size=512, color1=None, color2=None,
+             loaded=None):
+    """loaded=(models, model) skips searching the client for the mesh (the app already has it)."""
     folder = os.path.join(WORK, name)
     if os.path.exists(folder):
         raise SystemExit(f"{folder} already exists")
     os.makedirs(folder)
     if game:
-        models, m = load_game_mesh(game, mesh)
+        models, m = loaded or load_game_mesh(game, mesh)
         geo.write_obj(models, os.path.join(folder, name + ".obj"), include=lambda x: x is m)
         uv = uv_overlay(m, None, size)
     elif obj:
@@ -424,6 +426,8 @@ def new_part(name, obj=None, game=None, mesh=None, color=None, mask=None, size=5
     dims = color_img.size if color_img else (size, size)
     build_psd(os.path.join(folder, name + ".psd"), dims, color_img, mask_img, uv)
     cfg = {"color1": color1 or "#b0d8ff", "color2": color2 or "#2a6f8f"}
+    if game:
+        cfg["source"] = {"game": game, "mesh": mesh}
     json.dump(cfg, open(os.path.join(folder, "part.json"), "w"), indent=2)
     log(f"created {folder}")
     return folder
