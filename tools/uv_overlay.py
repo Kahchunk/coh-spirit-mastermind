@@ -16,7 +16,8 @@ def uv_overlay(mesh, texture=None, size=1024, color=(80, 220, 255, 255)):
     else:
         base = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     draw = ImageDraw.Draw(base)
-    pts = [(u * size, v * size) for u, v in mesh.sts]
+    # v runs bottom-up; image rows run top-down.
+    pts = [(u * size, (1 - v) * size) for u, v in mesh.sts]
     for a, b, c in mesh.tris:
         draw.polygon([pts[a], pts[b], pts[c]], outline=color)
     return base

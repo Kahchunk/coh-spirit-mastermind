@@ -10,7 +10,9 @@ Vertex streams are delta-compressed: 2-bit codes per value, then 0/1/2/4-byte pa
 import struct
 import zlib
 
-RECORD = 244
+# version: (record size, name offset, bounds min, bounds max, first pack block)
+# v7 lacks one int before the grid, so everything after it sits 4 bytes earlier.
+LAYOUTS = {8: (244, 64, 84, 96, 108), 7: (232, 60, 80, 92, 104)}
 PACK_NAMES = ("tris", "verts", "norms", "sts", "sts3", "weights", "matidxs", "grid")
 
 
@@ -80,8 +82,9 @@ def uncompress_deltas(src, stride, count, is_float, int_plus=1):
 def read_geo(path):
     data = open(path, "rb").read()
     zsize, _zero, version, hsize = struct.unpack_from("<4I", data, 0)
-    if version != 8:
-        raise ValueError(f"{path}: geo version {version} not supported (only 8)")
+    if version not in LAYOUTS:
+        raise ValueError(f"{path}: geo version {version} not supported ({sorted(LAYOUTS)})")
+    record, off_name, off_min, off_max, off_packs = LAYOUTS[version]
     hdr = zlib.decompress(data[16:4 + zsize])
     base = 4 + zsize
     datasize, texblk, objblk, texidxblk = struct.unpack_from("<4i", hdr, 0)
@@ -94,15 +97,15 @@ def read_geo(path):
     model_count = struct.unpack_from("<i", hdr, p + 136)[0]
     p += 140
     models = []
-    while len(models) < model_count and p + RECORD <= len(hdr):
-        rec = hdr[p:p + RECORD]
+    while len(models) < model_count and p + record <= len(hdr):
+        rec = hdr[p:p + record]
         size, radius, tex_count, _bone_ptr, nverts, ntris = struct.unpack_from("<if4i", rec, 0)
-        if size != RECORD:
+        if size != record:
             break
-        name_off = struct.unpack_from("<i", rec, 64)[0]
-        mins = struct.unpack_from("<3f", rec, 84)
-        maxs = struct.unpack_from("<3f", rec, 96)
-        packs = [struct.unpack_from("<3i", rec, 108 + 12 * k) for k in range(len(PACK_NAMES))]
+        name_off = struct.unpack_from("<i", rec, off_name)[0]
+        mins = struct.unpack_from("<3f", rec, off_min)
+        maxs = struct.unpack_from("<3f", rec, off_max)
+        packs = [struct.unpack_from("<3i", rec, off_packs + 12 * k) for k in range(len(PACK_NAMES))]
         blobs = {n: _unpack(data, base, *pk) for n, pk in zip(PACK_NAMES, packs)}
         tris = uncompress_deltas(blobs["tris"], 3, ntris, False) if blobs["tris"] else []
         verts = uncompress_deltas(blobs["verts"], 3, nverts, True) if blobs["verts"] else []
@@ -110,7 +113,7 @@ def read_geo(path):
         sts = uncompress_deltas(blobs["sts"], 2, nverts, True) if blobs["sts"] else []
         models.append(Model(objnames.get(name_off, f"model_{len(models)}"), verts, tris, norms, sts,
                             blobs["weights"], blobs["matidxs"], (mins, maxs), tex_count))
-        p += RECORD
+        p += record
     return models
 
 
@@ -125,7 +128,8 @@ def write_obj(models, path, include=lambda m: True):
             for x, y, z in m.verts:
                 f.write(f"v {x:.6f} {y:.6f} {z:.6f}\n")
             for u, v in m.sts:
-                f.write(f"vt {u:.6f} {1 - v:.6f}\n")
+                # CoH st.v already runs bottom-up like OBJ; verified on the Croatoa Spirit face.
+                f.write(f"vt {u:.6f} {v:.6f}\n")
             for x, y, z in m.norms:
                 f.write(f"vn {x:.6f} {y:.6f} {z:.6f}\n")
             has_t, has_n = bool(m.sts), bool(m.norms)

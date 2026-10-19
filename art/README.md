@@ -82,6 +82,35 @@ original studio files and must never land in this public repo (`*.max` is ignore
 7. Reference the new geometry from a costume part (`Geometry` / `Texture1` / `Texture2` fields) in the spec
    editor's costume **Part overrides**.
 
+## Where color comes from
+
+Player and henchman costume textures are painted **in grayscale**. The source PSDs measure about
+0 saturation. Color is applied at runtime from the costume's Color1/Color2 values:
+
+```
+final color = base texture (grayscale detail) x mix(Color1, Color2, by mask)
+```
+
+The **Mask** layer group decides which color lands where: black takes Color1, white takes Color2.
+One-off NPC pieces (the Croatoa Spirit face, a cadet hat) are painted in full color instead and
+aren't tintable. A texture's alpha channel is a blend mask (e.g. where skin color shows), never
+transparency.
+
+Each original PSD keeps every map for one part in named layer groups: visible layers (color/detail),
+`Bump`, `Spec` and `Mask`. Toggle a group on and export it to get that map.
+
+## Live preview (Photoshop -> Blender)
+
+```bash
+"C:/Program Files/Blender Foundation/Blender 3.6/blender.exe" --python tools/blender/coh_live_preview.py -- --obj art/reference/preview/rifle01.obj --base art/reference/preview/rifle01_base.png --mask art/reference/preview/rifle01_mask.png
+```
+
+Blender opens with the mesh using the game's tint math: Color1 and Color2 are color nodes on the
+"CoH Tint" material. Any texture file you save is reloaded within about a second. For live
+Photoshop updates, name layer groups after the PNG files (e.g. `rifle01_base.png`,
+`rifle01_mask.png`) and enable **File > Generate > Image Assets**. Photoshop then rewrites those
+files on every edit. Omit `--mask` for full-color pieces like `spirit_face.png` on `spirit_head.obj`.
+
 ## Weapon color masks (how shipped weapons do it)
 
 Surveyed from the client (`tricks/WEAPONS/CustomWeapons.txt` and the custom weapon models):
