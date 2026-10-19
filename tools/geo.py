@@ -118,7 +118,10 @@ def read_geo(path):
     return models
 
 
-def write_obj(models, path, include=lambda m: True):
+def write_obj(models, path, include=lambda m: True, normals=True):
+    """normals=False writes one smoothing group instead of explicit normals. CoH meshes split
+    vertices at hard edges, so that reproduces the game's shading in apps (3ds Max's OBJ
+    importer) that mishandle imported normals."""
     with open(path, "w", encoding="utf-8") as f:
         f.write("# exported from CoH .geo for reference\n")
         vo = to = no = 1
@@ -131,9 +134,11 @@ def write_obj(models, path, include=lambda m: True):
             for u, v in m.sts:
                 # CoH st.v already runs bottom-up like OBJ; verified on the Croatoa Spirit face.
                 f.write(f"vt {u:.6f} {v:.6f}\n")
-            for x, y, z in m.norms:
+            for x, y, z in (m.norms if normals else []):
                 f.write(f"vn {x:.6f} {y:.6f} {z:.6f}\n")
-            has_t, has_n = bool(m.sts), bool(m.norms)
+            has_t, has_n = bool(m.sts), bool(m.norms) and normals
+            if not normals:
+                f.write("s 1\n")
             for a, b, c in m.tris:
                 idx = []
                 for i in (a, b, c):
@@ -146,4 +151,4 @@ def write_obj(models, path, include=lambda m: True):
                 f.write("f " + " ".join(idx) + "\n")
             vo += len(m.verts)
             to += len(m.sts)
-            no += len(m.norms)
+            no += len(m.norms) if normals else 0

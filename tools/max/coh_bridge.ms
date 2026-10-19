@@ -28,6 +28,7 @@ struct CohBridgeState
 	requestPath,
 	scriptPath,
 	scriptStamp,
+	objStamp = "",
 	timer,
 	lastRequest = "",
 	lastStamp = "",
@@ -243,7 +244,10 @@ fn cohTick =
 			local raw = ""
 			for k in #("part", "obj", "color", "mask", "color1", "color2", "look", "ghost_opacity") do raw += k + ":" + (cohGet req k "") + ";"
 			local stamp = (cohFileStamp (cohGet req "color" "")) + "|" + (cohFileStamp (cohGet req "mask" ""))
-			local partChanged = (cohGet req "part" "") != st.part or (findString st.lastRequest ("obj:" + (cohGet req "obj" "") + ";")) == undefined
+			local objStamp = cohFileStamp (cohGet req "obj" "")
+			-- Reimport when the part or its mesh file changes.
+			local partChanged = (cohGet req "part" "") != st.part or (findString st.lastRequest ("obj:" + (cohGet req "obj" "") + ";")) == undefined or objStamp != st.objStamp
+			st.objStamp = objStamp
 			local changed = raw != st.lastRequest or stamp != st.lastStamp
 			-- Remember the request first, so a failed render isn't retried every tick.
 			st.lastRequest = raw

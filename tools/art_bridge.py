@@ -412,7 +412,8 @@ def new_part(name, obj=None, game=None, mesh=None, color=None, mask=None, size=5
     os.makedirs(folder)
     if game:
         models, m = load_game_mesh(game, mesh)
-        geo.write_obj(models, os.path.join(folder, name + ".obj"), include=lambda x: x is m)
+        # No explicit normals: Max computes them from the split vertices, matching the game.
+        geo.write_obj(models, os.path.join(folder, name + ".obj"), include=lambda x: x is m, normals=False)
         uv = uv_overlay(m, None, size)
     elif obj:
         shutil.copy(obj, os.path.join(folder, name + ".obj"))
