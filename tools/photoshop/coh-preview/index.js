@@ -5,7 +5,8 @@
 const { app } = require("photoshop");
 const fs = require("fs");
 
-const POLL_MS = 50;
+const POLL_MS = 50;       // while rotating or waiting on a new frame
+const IDLE_POLL_MS = 400; // otherwise
 const SETTLE_MS = 250; // after the last drag/zoom input, ask Max for the full-quality frame
 const DEFAULT_ORBIT = { yaw: 35, pitch: 25, zoom: 1 };
 const ZOOM_MIN = 0.25, ZOOM_MAX = 8;
@@ -225,6 +226,7 @@ function setOrbit(o) {
   lastInput = Date.now();
   showZoom();
   drawCube();
+  wake();
 }
 
 // The zoom slider is logarithmic (0.25x to 8x), so each step feels the same size.
@@ -416,10 +418,57 @@ bindColor(2);
 showZoom();
 drawCube();
 
-let running = false;
-setInterval(async () => {
-  if (running) return;
-  running = true;
-  try { await tick(); } catch (e) { $("status").textContent = "Preview error: " + e.message; }
-  running = false;
-}, POLL_MS);
+// ---------- lifecycle ----------
+// The loop runs only while the panel is showing, and stops for good when the plugin unloads, so
+// nothing touches Photoshop or the disk while Photoshop is quitting.
+
+let loopTimer = null;
+let alive = false;
+let lastFrameAt = 0;
+
+async function loop() {
+  loopTimer = null;
+  if (!alive) return;
+  const seen = current.viewStamp;
+  try { await tick(); } catch (e) { if (alive) $("status").textContent = "Preview error: " + e.message; }
+  if (current.viewStamp !== seen) lastFrameAt = Date.now();
+  if (!alive) return;
+  // Fast while you interact and just after (frames still arriving), slow when nothing is happening.
+  const busy = interacting() || Date.now() - lastFrameAt < 1500 || orbitText() !== orbitWritten;
+  loopTimer = setTimeout(loop, busy ? POLL_MS : IDLE_POLL_MS);
+}
+
+function start() {
+  if (alive) return;
+  alive = true;
+  loop();
+}
+
+function stop() {
+  alive = false;
+  if (loopTimer) { clearTimeout(loopTimer); loopTimer = null; }
+  if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
+  pending = null;
+  drag = null;
+}
+
+// Any interaction wakes the loop straight away instead of waiting out the idle delay.
+function wake() {
+  if (alive && loopTimer) { clearTimeout(loopTimer); loopTimer = null; loop(); }
+}
+
+try {
+  require("uxp").entrypoints.setup({
+    plugin: { destroy() { stop(); } },
+    panels: {
+      cohPreviewPanel: {
+        show() { start(); },
+        hide() { stop(); },
+        destroy() { stop(); },
+      },
+    },
+  });
+} catch (e) {
+  // Older hosts without entrypoints.setup: just run while loaded.
+}
+start();
