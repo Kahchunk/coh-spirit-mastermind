@@ -330,36 +330,50 @@ function polygon(ctx, pts) {
   ctx.closePath();
 }
 
+const TILE = "#2b2c2f";
+
 function drawRing(ctx, project, z) {
-  const N = 48;
-  const at = (r, i) => { const a = (i / N) * 2 * Math.PI; return [r * Math.cos(a), r * Math.sin(a), RING_Z]; };
-  // Built from small quads so it needs no even-odd fill (not every UXP canvas has one).
-  ctx.fillStyle = z[2] >= 0 ? "rgba(196, 199, 204, 0.85)" : "rgba(150, 153, 158, 0.85)";
-  for (let i = 0; i < N; i++) {
-    polygon(ctx, [at(RING_OUT, i), at(RING_OUT, i + 1), at(RING_IN, i + 1), at(RING_IN, i)].map(project));
-    ctx.fill();
-  }
-  ctx.strokeStyle = "rgba(90, 92, 96, 0.9)";
+  const N = 64;
+  const ellipse = (r) => Array.from({ length: N }, (_, i) => {
+    const a = (i / N) * 2 * Math.PI;
+    return project([r * Math.cos(a), r * Math.sin(a), RING_Z]);
+  });
+  polygon(ctx, ellipse(RING_OUT));
+  ctx.fillStyle = z[2] >= 0 ? "#c4c7cc" : "#96999e"; // darker from below, like Max's compass
+  ctx.fill();
+  ctx.strokeStyle = "#5a5c60";
   ctx.lineWidth = 1;
-  for (const r of [RING_IN, RING_OUT]) {
-    polygon(ctx, Array.from({ length: N }, (_, i) => project(at(r, i))));
-    ctx.stroke();
-  }
+  ctx.stroke();
+  polygon(ctx, ellipse(RING_IN));
+  ctx.fillStyle = TILE;
+  ctx.fill();
+  ctx.stroke();
 }
 
+let cubeFront = $("cubeCanvasA"), cubeBack = $("cubeCanvasB");
+let cubeQueued = false;
+
+// Many orbit changes can arrive between screen refreshes; coalesce them into one redraw.
 function drawCube() {
+  if (cubeQueued) return;
+  cubeQueued = true;
+  // A timer, not requestAnimationFrame: rAF doesn't fire reliably in every panel host.
+  setTimeout(() => { cubeQueued = false; paintCube(); }, 12);
+}
+
+function paintCube() {
   const { x, y, z } = cameraBasis();
   const c = CUBE_SIZE / 2;
   const project = (p) => [c + CUBE_SCALE * dot(p, x), c - CUBE_SCALE * dot(p, y)];
   cubeFaces = FACES.map((f) => ({ ...f, facing: dot(f.n, z), pts: faceCorners(f.n).map(project), mid: project(f.n) }))
     .filter((f) => f.facing > 0.02)
     .sort((a, b) => a.facing - b.facing);
-  const canvas = $("cubeCanvas");
+  const canvas = cubeBack;
   const ctx = canvas && canvas.getContext ? canvas.getContext("2d") : null;
   if (ctx) {
-    ctx.clearRect(0, 0, CUBE_SIZE, CUBE_SIZE);
-    const ringFirst = z[2] >= 0; // from above the ring is under the cube; from below it's in front
-    if (ringFirst) drawRing(ctx, project, z);
+    ctx.fillStyle = TILE;
+    ctx.fillRect(0, 0, CUBE_SIZE, CUBE_SIZE);
+    drawRing(ctx, project, z);
     for (const f of cubeFaces) {
       const g = Math.round(178 + 62 * f.facing); // light gray, brighter as it faces you
       polygon(ctx, f.pts);
@@ -369,7 +383,11 @@ function drawCube() {
       ctx.lineWidth = 1;
       ctx.stroke();
     }
-    if (!ringFirst) drawRing(ctx, project, z);
+  }
+  if (ctx) {
+    cubeBack.style.visibility = "visible";
+    cubeFront.style.visibility = "hidden";
+    [cubeFront, cubeBack] = [cubeBack, cubeFront];
   }
   for (const f of FACES) {
     const el = $("lbl-" + f.id);
@@ -413,8 +431,10 @@ function insidePoly(px, py, pts) {
   return inside;
 }
 
-// Dragging the cube orbits (the stage's drag handler does it); a click that didn't move snaps to a face.
+// Dragging the cube orbits, like dragging the view; a click that didn't move snaps to a face.
 const cubeEl = $("cube");
+cubeEl.addEventListener("pointerdown", (e) => { usingPointer = true; startDrag(e.clientX, e.clientY); });
+cubeEl.addEventListener("mousedown", (e) => { if (!usingPointer) startDrag(e.clientX, e.clientY); });
 cubeEl.addEventListener("click", (e) => {
   if (dragTravel > 4) return;
   const r = cubeEl.getBoundingClientRect();

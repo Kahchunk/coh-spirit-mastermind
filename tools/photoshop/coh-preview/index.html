@@ -8,13 +8,17 @@
   #stage { position: relative; width: 100%; height: 240px; border-radius: 4px; overflow: hidden; background: #333333; cursor: grab; }
   #stage img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; visibility: hidden; }
   #empty { position: absolute; left: 0; right: 0; top: 40%; text-align: center; color: #7f8a92; padding: 0 12px; }
-  #cube { position: absolute; left: 4px; top: 4px; width: 120px; height: 120px; cursor: grab; }
-  #cubeCanvas { position: absolute; left: 0; top: 0; width: 120px; height: 120px; }
+  #viewBar { display: flex; align-items: stretch; gap: 8px; margin-bottom: 6px; }
+  /* Photoshop's canvas can't be transparent, so the cube sits on its own tile. */
+  #cube { position: relative; width: 120px; height: 120px; flex: none; border-radius: 4px; overflow: hidden; background: #2b2c2f; cursor: grab; }
+  .cubeCanvas { position: absolute; left: 0; top: 0; width: 120px; height: 120px; }
+  #cubeCanvasB { visibility: hidden; }
   #cube .face { position: absolute; width: 64px; text-align: center; font-size: 8px; font-weight: bold; color: #3a3c40; pointer-events: none; }
   #cube .compass { position: absolute; width: 10px; text-align: center; font-size: 9px; font-weight: bold; color: #2b2d31; pointer-events: none; }
-  #angle { position: absolute; left: 8px; bottom: 6px; font-size: 10px; color: #aab3bb; pointer-events: none; }
-  #zoomTools { position: absolute; right: 6px; top: 6px; display: flex; flex-direction: column; gap: 4px; }
-  #zoomTools button { width: 30px; height: 26px; padding: 0; font-size: 15px; font-weight: bold; }
+  #viewSide { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+  #angle { font-size: 11px; color: #c9ced3; }
+  #zoomTools { display: flex; gap: 4px; }
+  #zoomTools button { width: 34px; height: 26px; padding: 0; font-size: 15px; font-weight: bold; }
   #zoomTools #zoomFit { font-size: 10px; font-weight: normal; }
   .row { display: flex; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
   .views button { padding: 2px 8px; }
@@ -28,12 +32,10 @@
 </head>
 <body>
   <div id="status">Open a part's .psd from art\work</div>
-  <div id="stage">
-    <img id="viewA" />
-    <img id="viewB" />
-    <div id="empty">Drag to rotate. Zoom with the buttons, the slider, or the scroll wheel.</div>
+  <div id="viewBar">
     <div id="cube">
-      <canvas id="cubeCanvas" width="120" height="120"></canvas>
+      <canvas class="cubeCanvas" id="cubeCanvasA" width="120" height="120"></canvas>
+      <canvas class="cubeCanvas" id="cubeCanvasB" width="120" height="120"></canvas>
       <span class="face" id="lbl-front">FRONT</span>
       <span class="face" id="lbl-back">BACK</span>
       <span class="face" id="lbl-right">RIGHT</span>
@@ -45,12 +47,19 @@
       <span class="compass" id="cmp-S">S</span>
       <span class="compass" id="cmp-W">W</span>
     </div>
-    <div id="angle"></div>
-    <div id="zoomTools">
-      <button id="zoomIn" title="Zoom in">+</button>
-      <button id="zoomOut" title="Zoom out">&minus;</button>
-      <button id="zoomFit" title="Fit the whole model">Fit</button>
+    <div id="viewSide">
+      <div id="angle"></div>
+      <div id="zoomTools">
+        <button id="zoomIn" title="Zoom in">+</button>
+        <button id="zoomOut" title="Zoom out">&minus;</button>
+        <button id="zoomFit" title="Fit the whole model">Fit</button>
+      </div>
     </div>
+  </div>
+  <div id="stage">
+    <img id="viewA" />
+    <img id="viewB" />
+    <div id="empty">Drag to rotate. Zoom with the buttons, the slider, or the scroll wheel.</div>
   </div>
   <div class="row">
     <label>Zoom</label>
