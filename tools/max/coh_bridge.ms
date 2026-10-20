@@ -2,13 +2,16 @@
 CoH Art Bridge - 3ds Max 2015 side.
 
 Started by tools/art_bridge.py (3dsmax.exe -U MAXScript coh_bridge.ms) and left running.
-Every 0.75 s it reads art/work/.preview_request.txt (written by the bridge) and:
+Several times a second it reads art/work/.preview_request.txt (written by the bridge) and:
   - when the part changes: resets the scene, imports the part's .obj, builds the tint material
     (Standard material, diffuse = RGB Multiply(base, Mix(Color1, Color2, mask))) and frames the
     viewports (perspective / top / front / right);
   - when a texture or setting changes: reloads the bitmaps and renders the preview sheet
     (two isometric corners + front/back/left/right/top/bottom) to the part's .preview/sheet.png,
-    which the Photoshop "CoH Preview" panel displays.
+    which the CoH Art Bridge app shows;
+  - when the Photoshop "CoH Preview" panel orbits (it writes the part's .preview/orbit.txt): turns the
+    Orthographic / Realistic viewport to that angle and saves exactly what it shows to .preview/view.png,
+    which the panel displays.
 */
 
 global cohBridge
@@ -32,6 +35,9 @@ struct CohBridgeState
 	timer,
 	lastRequest = "",
 	lastStamp = "",
+	lastOrbit = "",
+	viewCam = undefined,
+	viewTgt = undefined,
 	part = undefined,
 	settings = undefined,
 	material = undefined,
@@ -218,6 +224,93 @@ fn cohRenderSheet st req =
 	true
 )
 
+-- Windows parks minimized windows at -32000, -32000.
+fn cohMaxMinimized =
+(
+	local r = try (windows.getWindowPos (windows.getMAXHWND())) catch (undefined)
+	r != undefined and r.x < -10000
+)
+
+fn cohSceneBounds =
+(
+	if geometry.count == 0 then return undefined
+	local bb = #(geometry[1].min, geometry[1].max)
+	for g in geometry do (bb[1] = [amin bb[1].x g.min.x, amin bb[1].y g.min.y, amin bb[1].z g.min.z]
+	                      bb[2] = [amax bb[2].x g.max.x, amax bb[2].y g.max.y, amax bb[2].z g.max.z])
+	bb
+)
+
+-- Orbit = #(yaw, pitch, zoom) from the panel's .preview/orbit.txt. Yaw 0 looks at the front (from -Y).
+fn cohReadOrbit req =
+(
+	local o = cohReadRequest ((getFilenamePath (cohGet req "sheet" "")) + "orbit.txt")
+	if o == undefined then return #(35.0, 25.0, 1.0)
+	#((cohGet o "yaw" "35") as float, (cohGet o "pitch" "25") as float, (cohGet o "zoom" "1") as float)
+)
+
+-- Overlays (grid, ViewCube, viewport labels, light icons) would end up in the captured view.
+fn cohCleanViewport =
+(
+	try (viewport.setGridVisibility #all false) catch ()
+	try (ViewCubeOps.Visibility = false) catch ()
+	try (ViewportButtonMgr.EnableButtons = false) catch ()
+	hideByCategory.lights = true
+	hideByCategory.cameras = true
+	hideByCategory.helpers = true
+)
+
+-- Seen through a hidden orthographic camera so the scale never changes while orbiting, then
+-- cropped to a centered square (which also drops the axis tripod in the corner).
+fn cohRenderView st req orbit =
+(
+	local out = (getFilenamePath (cohGet req "sheet" "")) + "view.png"
+	local bb = cohSceneBounds()
+	if bb == undefined then return false
+	local center = (bb[1] + bb[2]) / 2.0
+	local radius = (length (bb[2] - bb[1])) / 2.0
+	local yaw = orbit[1], pitch = amax -89.0 (amin 89.0 orbit[2]), zoom = amax 0.1 orbit[3]
+	local z = normalize [(cos pitch) * (sin yaw), -(cos pitch) * (cos yaw), sin pitch]
+	local x = normalize (cross [0, 0, 1] z)
+	local y = cross z x
+	local dist = radius * 4.0
+	-- Same camera setup as the preview sheet (target camera, orthographic), kept between frames.
+	if st.viewCam == undefined or not isValidNode st.viewCam do
+	(
+		st.viewTgt = Targetobject name:"CoH View Target"
+		st.viewCam = Targetcamera name:"CoH View" target:st.viewTgt orthoProjection:true
+	)
+	st.viewTgt.pos = center
+	st.viewCam.pos = center + z * dist
+	viewport.activeViewport = 1
+	if viewport.getCamera() != st.viewCam do viewport.setCamera st.viewCam
+	try ((NitrousGraphicsManager.GetActiveViewportSetting()).VisualStyleMode = #Realistic) catch ()
+	-- A minimized (or tiny) Max doesn't draw its viewports, so render that one view instead.
+	local w = gw.getWinSizeX(), h = gw.getWinSizeY()
+	local sq
+	if (cohMaxMinimized()) or w < 128 or h < 128 then
+	(
+		st.viewCam.fov = 2.0 * atan ((radius * 1.08 / zoom) / dist)
+		sq = render camera:st.viewCam outputSize:[640, 640] vfb:false
+	)
+	else
+	(
+		-- Fit the bounding sphere (plus a margin) to the square's height; the camera FOV is horizontal.
+		st.viewCam.fov = 2.0 * atan ((radius * 1.08 / zoom * (w as float) / h) / dist)
+		completeRedraw()
+		local dib = gw.getViewportDib()
+		local side = amin dib.width dib.height
+		sq = bitmap side side
+		pasteBitmap dib sq (box2 ((dib.width - side) / 2) ((dib.height - side) / 2) side side) [0, 0]
+		close dib
+	)
+	sq.filename = out + ".tmp.png"
+	save sq
+	close sq
+	if doesFileExist out do deleteFile out
+	renameFile (out + ".tmp.png") out
+	true
+)
+
 -- Build the mesh ourselves instead of using Max's OBJ importer: the importer welds vertices that
 -- share a position, but CoH splits vertices along hard edges and UV seams, so welding smooths
 -- across those edges (dark diagonal halves on flat faces). Vertices, UVs and the game's normals
@@ -283,6 +376,7 @@ fn cohLoadPart st req =
 	for g in geometry do g.material = st.material
 	cohApplyLook st req
 	cohFrameViewports()
+	cohCleanViewport()
 	st.part = cohGet req "part" ""
 	cohLog ("loaded " + st.part)
 )
@@ -316,19 +410,27 @@ fn cohTick =
 			-- Remember the request first, so a failed render isn't retried every tick.
 			st.lastRequest = raw
 			st.lastStamp = stamp
+			-- The orbit file's text, not its timestamp: file times only resolve to the second.
+			local orbit = cohReadOrbit req
+			local orbitRaw = (orbit as string)
+			local orbitChanged = orbitRaw != st.lastOrbit
+			st.lastOrbit = orbitRaw
 			if partChanged then
 			(
 				cohLoadPart st req
 				cohRenderSheet st req
+				cohRenderView st req orbit
 			)
-			else if changed do
+			else if changed then
 			(
 				if st.baseMap != undefined do st.baseMap.reload()
 				if st.maskMap != undefined do st.maskMap.reload()
 				cohApplyLook st req
 				completeRedraw()
+				cohRenderView st req orbit
 				cohRenderSheet st req
 			)
+			else if orbitChanged do cohRenderView st req orbit
 		)
 	)
 	catch (cohLog ("error: " + getCurrentException()))
@@ -343,7 +445,7 @@ fn cohTick =
 	local me = getSourceFileName()
 	cohBridge = CohBridgeState requestPath:(root + "art\\work\\.preview_request.txt") scriptPath:me scriptStamp:(getFileModDate me)
 	local t = dotNetObject "System.Windows.Forms.Timer"
-	t.Interval = 750
+	t.Interval = 120
 	dotNet.addEventHandler t "Tick" (fn onTick s e = cohTick())
 	cohBridge.timer = t
 	t.Start()

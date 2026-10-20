@@ -4,11 +4,11 @@
 <style>
   body { margin: 0; padding: 8px; color: #ddd; background: transparent; font-size: 12px; }
   #status { color: #9aa; margin-bottom: 6px; min-height: 16px; }
-  #wrap { position: relative; width: 100%; }
-  #sheet { width: 100%; display: block; border-radius: 4px; }
-  #labels { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); pointer-events: none; }
-  #labels span { font-size: 10px; color: #cfd6dc; padding: 3px 5px; }
+  #stage { position: relative; width: 100%; border-radius: 4px; overflow: hidden; background: #26282c; cursor: grab; }
+  #view { width: 100%; display: block; }
+  #empty { padding: 40px 12px; text-align: center; color: #7f8a92; }
   .row { display: flex; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .views button { padding: 2px 8px; }
   .swatch { width: 22px; height: 22px; border-radius: 3px; border: 1px solid #555; }
   input.hex { width: 74px; }
   label { min-width: 52px; }
@@ -17,12 +17,20 @@
 </head>
 <body>
   <div id="status">Open a part's .psd from art\work</div>
-  <div id="wrap">
-    <img id="sheet" />
-    <div id="labels">
-      <span>Iso (front)</span><span>Front</span><span>Back</span><span>Top</span>
-      <span>Iso (back)</span><span>Left</span><span>Right</span><span>Bottom</span>
-    </div>
+  <div id="stage">
+    <img id="view" />
+    <div id="empty">Drag to rotate. Scroll or use - / + to zoom.</div>
+  </div>
+  <div class="row views">
+    <button data-yaw="35" data-pitch="25">Iso</button>
+    <button data-yaw="0" data-pitch="0">Front</button>
+    <button data-yaw="180" data-pitch="0">Back</button>
+    <button data-yaw="90" data-pitch="0">Right</button>
+    <button data-yaw="270" data-pitch="0">Left</button>
+    <button data-yaw="0" data-pitch="89">Top</button>
+    <button data-yaw="0" data-pitch="-89">Bottom</button>
+    <button id="zoomOut">-</button>
+    <button id="zoomIn">+</button>
   </div>
   <div id="controls">
     <div class="row">
@@ -44,7 +52,7 @@
       <input class="hex" id="c2" />
       <button id="fg2">Use foreground</button>
     </div>
-    <div class="hint">Mask black = Color1, white = Color2. The views re-render in 3ds Max each time you save (Ctrl+S). Keep the CoH Art Bridge running.</div>
+    <div class="hint">Mask black = Color1, white = Color2. 3ds Max re-renders the view when you rotate and each time you save (Ctrl+S). Keep the CoH Art Bridge app open.</div>
   </div>
   <script src="index.js"></script>
 </body>

@@ -108,11 +108,14 @@ Each original PSD keeps every map for one part in named layer groups: visible la
    it creates the part first: the mesh plus a starter PSD with a UV guide. 3ds Max 2015 opens (first time
    only, about a minute) and loads the part with the game's tint applied, in perspective/top/front/right
    viewports. Max builds the mesh with the game's own normals, so the shading matches the game.
-3. Paint and **save** (Ctrl+S). Max reloads the textures and re-renders a preview sheet: both
-   isometric corners plus front, back, left, right, top and bottom.
-4. The **CoH Preview** panel in Photoshop (Window > Plugins) shows that sheet, so you can work on one
-   screen. It also sets the look (Flat / Lit / Ghostly / Croatoa dusk) and Color1/Color2, with a
-   "Use foreground" button for each.
+3. Paint and **save** (Ctrl+S). Max reloads the textures and updates the preview.
+4. The **CoH Preview** panel in Photoshop (Plugins > CoH Preview) shows one 3D view of the part, so
+   you can work on one screen. Drag in it to rotate, scroll or use - / + to zoom, double-click to
+   reset, or jump to Iso / Front / Back / Right / Left / Top / Bottom. Max turns its orthographic
+   Realistic view to match and sends the frame back (about 3 per second; faster while Max's window
+   is visible, since it then grabs the viewport instead of rendering). The panel also sets the look
+   (Flat / Lit / Ghostly / Croatoa dusk) and Color1/Color2, with a "Use foreground" button for each.
+   Max still writes the 8-angle `sheet.png`, which the Art Bridge app uses as the part's preview.
 
 Install the panel once: run `python tools/photoshop/package_plugin.py`, then double-click
 `tools/photoshop/dist/coh-preview.ccx`. If Creative Cloud refuses an unsigned plugin, load
