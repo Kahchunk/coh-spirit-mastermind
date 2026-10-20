@@ -430,22 +430,35 @@ def new_part(name, obj=None, game=None, mesh=None, color=None, mask=None, size=5
     if os.path.exists(folder):
         raise SystemExit(f"{folder} already exists")
     os.makedirs(folder)
+    color_img = Image.open(color) if color else None
+    mask_img = Image.open(mask) if mask else None
+    source_tex = None
     if game:
         models, m = loaded or load_game_mesh(game, mesh)
         geo.write_obj(models, os.path.join(folder, name + ".obj"), include=lambda x: x is m)
         uv = uv_overlay(m, None, size)
+        # Start from the texture the game uses on this mesh (and its tint mask, for trick textures).
+        if color_img is None:
+            import texture_lookup
+            found = texture_lookup.mesh_textures(m)
+            if found:
+                color_img, game_mask, source_tex = found
+                mask_img = mask_img or game_mask
+                log(f"{name}: starting from the game texture {source_tex}")
+            else:
+                log(f"{name}: no game texture found for {[t[0] for t in m.textures]}; starting gray")
     elif obj:
         shutil.copy(obj, os.path.join(folder, name + ".obj"))
         uv = None
     else:
         raise SystemExit("give --game/--mesh or --obj")
-    color_img = Image.open(color) if color else None
-    mask_img = Image.open(mask) if mask else None
     dims = color_img.size if color_img else (size, size)
     build_psd(os.path.join(folder, name + ".psd"), dims, color_img, mask_img, uv)
     cfg = {"color1": color1 or "#b0d8ff", "color2": color2 or "#2a6f8f"}
     if game:
         cfg["source"] = {"game": game, "mesh": mesh}
+        if source_tex:
+            cfg["source"]["texture"] = source_tex
     json.dump(cfg, open(os.path.join(folder, "part.json"), "w"), indent=2)
     log(f"created {folder}")
     return folder

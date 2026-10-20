@@ -265,12 +265,13 @@ fn cohReadOrbit req =
 	  (cohGet o "quality" "final") == "draft")
 )
 
--- Overlays (grid, ViewCube, viewport labels, light icons) would end up in the captured view.
+-- The grid and light/camera icons would end up in the captured view. The ViewCube and the viewport
+-- labels stay: they sit in the corners, outside the centered square that gets captured.
 fn cohCleanViewport =
 (
 	try (viewport.setGridVisibility #all false) catch ()
-	try (ViewCubeOps.Visibility = false) catch ()
-	try (ViewportButtonMgr.EnableButtons = false) catch ()
+	try (ViewCubeOps.Visibility = true) catch ()
+	try (ViewportButtonMgr.EnableButtons = true) catch ()
 	hideByCategory.lights = true
 	hideByCategory.cameras = true
 	hideByCategory.helpers = true

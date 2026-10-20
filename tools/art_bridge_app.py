@@ -88,8 +88,10 @@ def _rot(yaw, pitch):
     return rx @ ry
 
 
-def render_views(model, size=PREVIEW):
-    """2x2 sheet (iso front, iso back, front, side), lit with the game's normals. CoH is Y-up, +Z forward."""
+def render_views(model, size=PREVIEW, texture=None):
+    """2x2 sheet (iso front, iso back, front, side), lit with the game's normals. CoH is Y-up, +Z forward.
+    texture: (PIL color image, PIL mask or None) to paint the mesh with; the mask tints with the
+    default preview colors, like a new part's part.json."""
     v = np.array(model.verts, dtype=float)
     n = np.array(model.norms, dtype=float) if model.norms else None
     tris = np.array(model.tris, dtype=int)
@@ -100,15 +102,27 @@ def render_views(model, size=PREVIEW):
     cell = size // 2
     sheet = Image.new("RGB", (size, size), PANEL)
     light = np.array([-0.4, 0.6, 0.7]) / np.linalg.norm([-0.4, 0.6, 0.7])
+    tex = _texture_array(texture) if texture and model.sts else None
+    uv = np.array(model.sts, dtype=float) if tex is not None else None
     for k, (label, r) in enumerate(views):
-        img = _raster(v @ r.T, (n @ r.T) if n is not None else None, tris, radius, cell, light)
+        img = _raster(v @ r.T, (n @ r.T) if n is not None else None, tris, radius, cell, light, tex, uv)
         ox, oy = (k % 2) * cell, (k // 2) * cell
         sheet.paste(img, (ox, oy))
         ImageDraw.Draw(sheet).text((ox + 8, oy + 6), label, fill=MUTED)
     return sheet
 
 
-def _raster(p, nrm, tris, radius, cell, light):
+def _texture_array(texture):
+    color, mask = texture
+    rgb = np.asarray(color.convert("RGB"), dtype=float)
+    if mask is not None:
+        m = np.asarray(mask.convert("L").resize(color.size), dtype=float)[..., None] / 255.0
+        c1, c2 = np.array([0xb0, 0xd8, 0xff], float), np.array([0x2a, 0x6f, 0x8f], float)
+        rgb = rgb * (c1 * (1 - m) + c2 * m) / 255.0
+    return rgb
+
+
+def _raster(p, nrm, tris, radius, cell, light, tex=None, uv=None):
     scale = cell * 0.44 / radius
     sx = p[:, 0] * scale + cell / 2
     sy = cell / 2 - p[:, 1] * scale
@@ -145,7 +159,16 @@ def _raster(p, nrm, tris, radius, cell, light):
         else:
             fn = np.cross(p[b] - p[a], p[c] - p[a])
             s = np.full(zz.shape, abs(fn @ light) / (np.linalg.norm(fn) or 1))
-        lit = (0.28 + 0.72 * s)[..., None] * base
+        if tex is not None:
+            # Same UV convention as the OBJ/UV guide: u right, v up (texture row = (1 - v) * height).
+            th, tw = tex.shape[:2]
+            uu = w0 * uv[a, 0] + w1 * uv[b, 0] + w2 * uv[c, 0]
+            vv = w0 * uv[a, 1] + w1 * uv[b, 1] + w2 * uv[c, 1]
+            tx = (np.mod(uu, 1.0) * tw).astype(int).clip(0, tw - 1)
+            ty = (np.mod(1.0 - vv, 1.0) * th).astype(int).clip(0, th - 1)
+            lit = (0.45 + 0.55 * s)[..., None] * tex[ty, tx]
+        else:
+            lit = (0.28 + 0.72 * s)[..., None] * base
         color[y0:y1 + 1, x0:x1 + 1][win] = lit[win]
     return Image.fromarray(color.clip(0, 255).astype(np.uint8))
 
@@ -344,9 +367,9 @@ class App:
                          + (f"\nyour part: {part.name}" if part else ""))
         self.open_btn.config(text="Open in Photoshop" if part else "Start part + open in Photoshop")
         self.folder_btn.state(["!disabled"] if part else ["disabled"])
-        self._render_async(row, lambda: load_entry(item)[1])
+        self._render_async(row, lambda: load_entry(item)[1], textured=True)
 
-    def _render_async(self, row, get_model):
+    def _render_async(self, row, get_model, textured=False):
         key = id(row[1]) if row[0] == "part" else (row[1]["geo"], row[1]["mesh"])
         if key in self.preview_cache:
             self._show(self.preview_cache[key], row)
@@ -356,7 +379,13 @@ class App:
 
         def work():
             try:
-                img = render_views(get_model())
+                model = get_model()
+                tex = None
+                if textured:
+                    import texture_lookup
+                    found = texture_lookup.mesh_textures(model)
+                    tex = found[:2] if found else None
+                img = render_views(model, texture=tex)
             except Exception as e:
                 img = Image.new("RGB", (PREVIEW, PREVIEW), PANEL)
                 ImageDraw.Draw(img).text((16, 16), f"no preview: {e}", fill=MUTED)

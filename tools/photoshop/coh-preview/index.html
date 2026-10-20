@@ -8,9 +8,10 @@
   #stage { position: relative; width: 100%; height: 240px; border-radius: 4px; overflow: hidden; background: #333333; cursor: grab; }
   #stage img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; visibility: hidden; }
   #empty { position: absolute; left: 0; right: 0; top: 40%; text-align: center; color: #7f8a92; padding: 0 12px; }
-  #cube { position: absolute; left: 6px; top: 6px; width: 100px; height: 100px; cursor: pointer; }
-  #cubeCanvas { position: absolute; left: 0; top: 0; width: 100px; height: 100px; }
-  #cube .face { position: absolute; width: 64px; text-align: center; font-size: 9px; font-weight: bold; color: #f2f4f7; pointer-events: none; }
+  #cube { position: absolute; left: 4px; top: 4px; width: 120px; height: 120px; cursor: grab; }
+  #cubeCanvas { position: absolute; left: 0; top: 0; width: 120px; height: 120px; }
+  #cube .face { position: absolute; width: 64px; text-align: center; font-size: 8px; font-weight: bold; color: #3a3c40; pointer-events: none; }
+  #cube .compass { position: absolute; width: 10px; text-align: center; font-size: 9px; font-weight: bold; color: #2b2d31; pointer-events: none; }
   #angle { position: absolute; left: 8px; bottom: 6px; font-size: 10px; color: #aab3bb; pointer-events: none; }
   #zoomTools { position: absolute; right: 6px; top: 6px; display: flex; flex-direction: column; gap: 4px; }
   #zoomTools button { width: 30px; height: 26px; padding: 0; font-size: 15px; font-weight: bold; }
@@ -32,13 +33,17 @@
     <img id="viewB" />
     <div id="empty">Drag to rotate. Zoom with the buttons, the slider, or the scroll wheel.</div>
     <div id="cube">
-      <canvas id="cubeCanvas" width="100" height="100"></canvas>
+      <canvas id="cubeCanvas" width="120" height="120"></canvas>
       <span class="face" id="lbl-front">FRONT</span>
       <span class="face" id="lbl-back">BACK</span>
       <span class="face" id="lbl-right">RIGHT</span>
       <span class="face" id="lbl-left">LEFT</span>
       <span class="face" id="lbl-top">TOP</span>
       <span class="face" id="lbl-bottom">BOTTOM</span>
+      <span class="compass" id="cmp-N">N</span>
+      <span class="compass" id="cmp-E">E</span>
+      <span class="compass" id="cmp-S">S</span>
+      <span class="compass" id="cmp-W">W</span>
     </div>
     <div id="angle"></div>
     <div id="zoomTools">

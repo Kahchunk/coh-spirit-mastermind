@@ -35,6 +35,29 @@ def _cstrings(block):
     return out
 
 
+def _texnames(block):
+    """Texture-name block: count, offsets, then the null-terminated names."""
+    if len(block) < 4:
+        return []
+    n = struct.unpack_from("<i", block, 0)[0]
+    offs = struct.unpack_from(f"<{n}i", block, 4)
+    base = 4 + 4 * n
+    return [block[base + o:block.index(b"\0", base + o)].decode("latin-1") for o in offs]
+
+
+def _model_textures(rec, texidx, tex_count, texnames):
+    """[(texture name, triangle count)] in triangle order. The record's 8th int is the model's offset
+    into the texidx block, which holds (u16 texture id, u16 triangle count) pairs."""
+    off = struct.unpack_from("<i", rec, 28)[0]
+    out = []
+    for k in range(tex_count):
+        if off + 4 * k + 4 > len(texidx):
+            break
+        tid, count = struct.unpack_from("<2H", texidx, off + 4 * k)
+        out.append((texnames[tid] if tid < len(texnames) else f"tex_{tid}", count))
+    return out
+
+
 def _unpack(data, base, packsize, unpacksize, offset):
     if unpacksize == 0:
         return b""
@@ -94,10 +117,12 @@ def parse_geo(data, decode=True):
     base = 4 + zsize
     datasize, texblk, objblk, texidxblk = struct.unpack_from("<4i", hdr, 0)
     p = 16
-    texnames_raw = hdr[p:p + texblk]
+    texnames = _texnames(hdr[p:p + texblk])
     p += texblk
     objnames = _cstrings(hdr[p:p + objblk])
-    p += objblk + texidxblk
+    p += objblk
+    texidx = hdr[p:p + texidxblk]
+    p += texidxblk
     # Model-header block: name[124], ptr, float length, -1, model count; then the records.
     model_count = struct.unpack_from("<i", hdr, p + 136)[0]
     p += 140
@@ -108,12 +133,13 @@ def parse_geo(data, decode=True):
         if size != record:
             break
         name_off = struct.unpack_from("<i", rec, off_name)[0]
+        textures = _model_textures(rec, texidx, tex_count, texnames)
         mins = struct.unpack_from("<3f", rec, off_min)
         maxs = struct.unpack_from("<3f", rec, off_max)
         if not decode:
             m = Model(objnames.get(struct.unpack_from("<i", rec, off_name)[0], f"model_{len(models)}"),
                       [], [], [], [], b"", b"", None, tex_count)
-            m.nverts, m.ntris = nverts, ntris
+            m.nverts, m.ntris, m.textures = nverts, ntris, textures
             models.append(m)
             p += record
             continue
@@ -125,7 +151,7 @@ def parse_geo(data, decode=True):
         sts = uncompress_deltas(blobs["sts"], 2, nverts, True) if blobs["sts"] else []
         m = Model(objnames.get(name_off, f"model_{len(models)}"), verts, tris, norms, sts,
                   blobs["weights"], blobs["matidxs"], (mins, maxs), tex_count)
-        m.nverts, m.ntris = nverts, ntris
+        m.nverts, m.ntris, m.textures = nverts, ntris, textures
         models.append(m)
         p += record
     return models

@@ -243,9 +243,11 @@ function showZoom() {
 
 let drag = null;
 let usingPointer = false;
-function startDrag(x, y) { drag = { x, y }; lastInput = Date.now(); $("stage").style.cursor = "grabbing"; }
+let dragTravel = 0; // how far the last drag moved, so a click on the cube isn't mistaken for a drag
+function startDrag(x, y) { drag = { x, y }; dragTravel = 0; lastInput = Date.now(); $("stage").style.cursor = "grabbing"; }
 function moveDrag(x, y) {
   if (!drag) return;
+  dragTravel += Math.abs(x - drag.x) + Math.abs(y - drag.y);
   // Like Max's orbit: you drag the model itself. Right spins it right; up tips its top away.
   setOrbit({ yaw: orbit.yaw - (x - drag.x) * 0.5, pitch: orbit.pitch + (y - drag.y) * 0.5 });
   drag = { x, y };
@@ -285,19 +287,22 @@ $("zoom").addEventListener("input", (e) => setOrbit({ zoom: sliderToZoom(parseFl
 $("zoom").addEventListener("change", (e) => setOrbit({ zoom: sliderToZoom(parseFloat(e.target.value)) }));
 
 // ---------- orientation cube ----------
-// Drawn from the panel's own angle, so it turns the moment you drag, before Max's frame arrives.
-// Same camera math as tools/max/coh_bridge.ms (Max is Z-up; the model's front faces -Y, like
-// Max's ViewCube). Click a face to look at it.
+// Styled after 3ds Max's ViewCube: light faces with dark labels, sitting on a compass ring (the base).
+// It's drawn from the panel's own angle, so it turns the moment you drag, before Max's frame
+// arrives. Drag it (or the view) to orbit; click a face to look straight at it. Same camera math
+// as tools/max/coh_bridge.ms: Max is Z-up and the model's front faces -Y, as in Max's ViewCube.
 
-const CUBE_SIZE = 100, CUBE_SCALE = 27;
+const CUBE_SIZE = 120, CUBE_SCALE = 24, RING_IN = 1.6, RING_OUT = 2.3, RING_Z = -1;
 const FACES = [
-  { id: "front", label: "FRONT", n: [0, -1, 0], view: { yaw: 0, pitch: 0 } },
-  { id: "back", label: "BACK", n: [0, 1, 0], view: { yaw: 180, pitch: 0 } },
-  { id: "right", label: "RIGHT", n: [1, 0, 0], view: { yaw: 90, pitch: 0 } },
-  { id: "left", label: "LEFT", n: [-1, 0, 0], view: { yaw: 270, pitch: 0 } },
-  { id: "top", label: "TOP", n: [0, 0, 1], view: { pitch: 89 } },
-  { id: "bottom", label: "BOTTOM", n: [0, 0, -1], view: { pitch: -89 } },
+  { id: "front", n: [0, -1, 0], view: { yaw: 0, pitch: 0 } },
+  { id: "back", n: [0, 1, 0], view: { yaw: 180, pitch: 0 } },
+  { id: "right", n: [1, 0, 0], view: { yaw: 90, pitch: 0 } },
+  { id: "left", n: [-1, 0, 0], view: { yaw: 270, pitch: 0 } },
+  { id: "top", n: [0, 0, 1], view: { pitch: 89 } },
+  { id: "bottom", n: [0, 0, -1], view: { pitch: -89 } },
 ];
+// Compass letters around the base, as in Max: N behind the model, S in front.
+const COMPASS = [["N", [0, 1]], ["E", [1, 0]], ["S", [0, -1]], ["W", [-1, 0]]];
 const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 const norm = (a) => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
@@ -318,6 +323,30 @@ function faceCorners(n) {
 
 let cubeFaces = []; // visible faces in screen space, front-most last, for drawing and clicks
 
+function polygon(ctx, pts) {
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (const p of pts.slice(1)) ctx.lineTo(p[0], p[1]);
+  ctx.closePath();
+}
+
+function drawRing(ctx, project, z) {
+  const N = 48;
+  const at = (r, i) => { const a = (i / N) * 2 * Math.PI; return [r * Math.cos(a), r * Math.sin(a), RING_Z]; };
+  // Built from small quads so it needs no even-odd fill (not every UXP canvas has one).
+  ctx.fillStyle = z[2] >= 0 ? "rgba(196, 199, 204, 0.85)" : "rgba(150, 153, 158, 0.85)";
+  for (let i = 0; i < N; i++) {
+    polygon(ctx, [at(RING_OUT, i), at(RING_OUT, i + 1), at(RING_IN, i + 1), at(RING_IN, i)].map(project));
+    ctx.fill();
+  }
+  ctx.strokeStyle = "rgba(90, 92, 96, 0.9)";
+  ctx.lineWidth = 1;
+  for (const r of [RING_IN, RING_OUT]) {
+    polygon(ctx, Array.from({ length: N }, (_, i) => project(at(r, i))));
+    ctx.stroke();
+  }
+}
+
 function drawCube() {
   const { x, y, z } = cameraBasis();
   const c = CUBE_SIZE / 2;
@@ -329,27 +358,38 @@ function drawCube() {
   const ctx = canvas && canvas.getContext ? canvas.getContext("2d") : null;
   if (ctx) {
     ctx.clearRect(0, 0, CUBE_SIZE, CUBE_SIZE);
+    const ringFirst = z[2] >= 0; // from above the ring is under the cube; from below it's in front
+    if (ringFirst) drawRing(ctx, project, z);
     for (const f of cubeFaces) {
-      const shade = Math.round(70 + 110 * f.facing);
-      ctx.beginPath();
-      ctx.moveTo(f.pts[0][0], f.pts[0][1]);
-      for (const p of f.pts.slice(1)) ctx.lineTo(p[0], p[1]);
-      ctx.closePath();
-      ctx.fillStyle = f.id === "front" ? `rgb(${shade - 20}, ${shade}, ${shade + 40})` : `rgb(${shade}, ${shade}, ${shade + 8})`;
+      const g = Math.round(178 + 62 * f.facing); // light gray, brighter as it faces you
+      polygon(ctx, f.pts);
+      ctx.fillStyle = `rgb(${g}, ${g}, ${Math.min(255, g + 4)})`;
       ctx.fill();
-      ctx.strokeStyle = "#1c1d20";
+      ctx.strokeStyle = "#6f7276";
       ctx.lineWidth = 1;
       ctx.stroke();
     }
+    if (!ringFirst) drawRing(ctx, project, z);
   }
   for (const f of FACES) {
     const el = $("lbl-" + f.id);
     const vis = cubeFaces.find((v) => v.id === f.id);
-    if (!vis || vis.facing < 0.3) { el.style.display = "none"; continue; }
+    if (!vis || vis.facing < 0.35) { el.style.display = "none"; continue; }
     el.style.display = "block";
     el.style.left = Math.round(vis.mid[0] - 32) + "px";
-    el.style.top = Math.round(vis.mid[1] - 7) + "px";
-    el.style.opacity = String(Math.min(1, (vis.facing - 0.3) * 2.2));
+    el.style.top = Math.round(vis.mid[1] - 6) + "px";
+    el.style.opacity = String(Math.min(1, 0.35 + (vis.facing - 0.35) * 1.6));
+  }
+  const r = (RING_IN + RING_OUT) / 2;
+  for (const [letter, [cx, cy]] of COMPASS) {
+    const w = [cx * r, cy * r, RING_Z];
+    const p = project(w);
+    const el = $("cmp-" + letter);
+    // A letter on the far side of the ring is hidden where the cube covers it.
+    const behind = dot(w, z) < 0 && cubeFaces.some((f) => insidePoly(p[0], p[1], f.pts));
+    el.style.display = behind ? "none" : "block";
+    el.style.left = Math.round(p[0] - 5) + "px";
+    el.style.top = Math.round(p[1] - 7) + "px";
   }
   $("angle").textContent = describeView();
 }
@@ -373,9 +413,10 @@ function insidePoly(px, py, pts) {
   return inside;
 }
 
+// Dragging the cube orbits (the stage's drag handler does it); a click that didn't move snaps to a face.
 const cubeEl = $("cube");
-for (const ev of ["pointerdown", "mousedown"]) cubeEl.addEventListener(ev, (e) => e.stopPropagation());
 cubeEl.addEventListener("click", (e) => {
+  if (dragTravel > 4) return;
   const r = cubeEl.getBoundingClientRect();
   const px = e.clientX - r.left, py = e.clientY - r.top;
   for (const f of [...cubeFaces].reverse()) {
