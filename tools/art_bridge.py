@@ -195,7 +195,8 @@ def open_in_blender(part, has_mask):
             "--color1", part.cfg.get("color1", "#b0d8ff"), "--color2", part.cfg.get("color2", "#2a6f8f")]
     if has_mask:
         args += ["--mask", part.mask_png]
-    flags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) | getattr(subprocess, "DETACHED_PROCESS", 0)
+    flags = (getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) | getattr(subprocess, "DETACHED_PROCESS", 0)
+             | getattr(subprocess, "ABOVE_NORMAL_PRIORITY_CLASS", 0))
     _blender[part.name] = subprocess.Popen(args, creationflags=flags, stdout=subprocess.DEVNULL,
                                            stderr=subprocess.DEVNULL)
     log(f"{part.name}: opened in Blender")
@@ -253,6 +254,21 @@ def max_running():
     return "3dsmax.exe" in out
 
 
+def boost_max():
+    """Run Max above normal priority so it keeps up while Photoshop has the foreground."""
+    import ctypes
+    out = subprocess.run(["tasklist", "/FI", "IMAGENAME eq 3dsmax.exe", "/FO", "CSV", "/NH"],
+                         capture_output=True, text=True).stdout
+    for line in out.splitlines():
+        cols = [c.strip('"') for c in line.split('","')]
+        if len(cols) > 1 and cols[1].isdigit():
+            k32 = ctypes.windll.kernel32
+            h = k32.OpenProcess(0x0200 | 0x0400, False, int(cols[1]))  # SET_INFORMATION | QUERY_INFORMATION
+            if h:
+                k32.SetPriorityClass(h, 0x8000)  # ABOVE_NORMAL_PRIORITY_CLASS
+                k32.CloseHandle(h)
+
+
 def open_in_max(part):
     global _max_proc
     if not part.mesh:
@@ -260,8 +276,10 @@ def open_in_max(part):
         return
     write_request(part)
     if _max_proc and _max_proc.poll() is None:
+        boost_max()
         return
     if max_running():
+        boost_max()
         if _max_proc is None:
             log("3ds Max is already open. If the preview doesn't load, run MAXScript > Run Script > "
                 "tools/max/coh_bridge.ms once in that Max.")

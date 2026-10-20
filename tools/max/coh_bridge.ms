@@ -224,6 +224,21 @@ fn cohRenderSheet st req =
 	true
 )
 
+-- Swap a finished file into place in one step (File.Replace), so a reader never finds the file
+-- missing or half-written. The first time there's nothing to replace, so it's a plain move.
+fn cohPublish tmp out =
+(
+	local io = dotNetClass "System.IO.File"
+	-- Replace needs a backup path (MAXScript can't pass null); it's overwritten each time.
+	try (if io.Exists out then io.Replace tmp out (out + ".bak") else io.Move tmp out)
+	catch
+	(
+		cohLog ("atomic replace failed, falling back: " + getCurrentException())
+		if doesFileExist out do deleteFile out
+		renameFile tmp out
+	)
+)
+
 -- Windows parks minimized windows at -32000, -32000.
 fn cohMaxMinimized =
 (
@@ -315,8 +330,7 @@ fn cohRenderView st req orbit =
 	sq.filename = tmp
 	save sq quiet:true
 	close sq
-	if doesFileExist out do deleteFile out
-	renameFile tmp out
+	cohPublish tmp out
 	true
 )
 

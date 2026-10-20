@@ -1,12 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="utf-8">
 <style>
   body { margin: 0; padding: 8px; color: #ddd; background: transparent; font-size: 12px; }
   #status { color: #9aa; margin-bottom: 6px; min-height: 16px; }
   #stage { position: relative; width: 100%; height: 240px; border-radius: 4px; overflow: hidden; background: #333333; cursor: grab; }
   #stage img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; visibility: hidden; }
   #empty { position: absolute; left: 0; right: 0; top: 40%; text-align: center; color: #7f8a92; padding: 0 12px; }
+  #cube { position: absolute; left: 6px; top: 6px; width: 100px; height: 100px; cursor: pointer; }
+  #cubeCanvas { position: absolute; left: 0; top: 0; width: 100px; height: 100px; }
+  #cube .face { position: absolute; width: 64px; text-align: center; font-size: 9px; font-weight: bold; color: #f2f4f7; pointer-events: none; }
+  #angle { position: absolute; left: 8px; bottom: 6px; font-size: 10px; color: #aab3bb; pointer-events: none; }
   #zoomTools { position: absolute; right: 6px; top: 6px; display: flex; flex-direction: column; gap: 4px; }
   #zoomTools button { width: 30px; height: 26px; padding: 0; font-size: 15px; font-weight: bold; }
   #zoomTools #zoomFit { font-size: 10px; font-weight: normal; }
@@ -26,6 +31,16 @@
     <img id="viewA" />
     <img id="viewB" />
     <div id="empty">Drag to rotate. Zoom with the buttons, the slider, or the scroll wheel.</div>
+    <div id="cube">
+      <canvas id="cubeCanvas" width="100" height="100"></canvas>
+      <span class="face" id="lbl-front">FRONT</span>
+      <span class="face" id="lbl-back">BACK</span>
+      <span class="face" id="lbl-right">RIGHT</span>
+      <span class="face" id="lbl-left">LEFT</span>
+      <span class="face" id="lbl-top">TOP</span>
+      <span class="face" id="lbl-bottom">BOTTOM</span>
+    </div>
+    <div id="angle"></div>
     <div id="zoomTools">
       <button id="zoomIn" title="Zoom in">+</button>
       <button id="zoomOut" title="Zoom out">&minus;</button>
