@@ -110,10 +110,10 @@ Each original PSD keeps every map for one part in named layer groups: visible la
    viewports. Max builds the mesh with the game's own normals, so the shading matches the game.
 3. Paint and **save** (Ctrl+S). Max reloads the textures and updates the preview.
 4. The **CoH Preview** panel in Photoshop (Plugins > CoH Preview) shows one 3D view of the part, so
-   you can work on one screen. Drag in it to rotate, scroll or use - / + to zoom, double-click to
-   reset, or jump to Iso / Front / Back / Right / Left / Top / Bottom. Max turns its orthographic
-   Realistic view to match and sends the frame back (about 3 per second; faster while Max's window
-   is visible, since it then grabs the viewport instead of rendering). The panel also sets the look
+   you can work on one screen. Drag in it to rotate. Zoom with the +/-/Fit buttons on the view, the
+   zoom slider, or the scroll wheel. Double-click to reset, or jump to Iso / Front / Back / Right /
+   Left / Top / Bottom. Max turns its orthographic Realistic view to match and sends frames back:
+   quick JPEG drafts (about 0.1 s each) while you drag, then a sharp PNG when you stop. The panel also sets the look
    (Flat / Lit / Ghostly / Croatoa dusk) and Color1/Color2, with a "Use foreground" button for each.
    Max still writes the 8-angle `sheet.png`, which the Art Bridge app uses as the part's preview.
 
