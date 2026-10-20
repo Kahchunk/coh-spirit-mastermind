@@ -54,7 +54,11 @@ def expand_trick(name):
     key = os.path.splitext(name)[0].encode("latin-1")
     for m in re.finditer(re.escape(key) + rb"\x00", blob):
         names = [s.decode("latin-1") for s in re.findall(rb"[\x20-\x7e]{3,}", blob[m.end():m.end() + 400])][:6]
-        base = next((n for n in names if not re.search(r"_(bump|mask|spec)$", n, re.I) and n.upper() != n), None)
+        # Skip the trick's own name (it repeats), the helper maps (bump, mask, spec, reflection, normal),
+        # "none" placeholders and the source path (all caps).
+        own = key.decode("latin-1").lower()
+        base = next((n for n in names if n.lower() != own and n.upper() != n
+                     and not re.search(r"bump|mask|spec|reflect|normal|^none$", n, re.I)), None)
         mask = next((n for n in names if n.lower().endswith("_mask")), None)
         if base:
             return base, mask

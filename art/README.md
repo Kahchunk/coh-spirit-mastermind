@@ -148,6 +148,33 @@ python tools/art_bridge.py new spirit_chest --game "player_library/MALE_SHIRT.ge
 New part from your own model: `--obj path/to/model.obj`. Two examples (a tintable rifle and the
 Spirit face) are created with `python tools/art_bridge.py examples`.
 
+## Master turnaround sheets (draw a character on the game's body)
+
+```bash
+python tools/master_sheet.py            # male, female and huge
+python tools/master_sheet.py huge --scale 220
+```
+
+This writes `art/templates/<body>_master_sheet.psd`, the game's base body (the plain chest, hips,
+gloves, boots and head every player and NPC costume builds on) placed on that body type's own rest
+skeleton and rendered front / right side / back at one shared scale. Layers:
+
+| Layer | What it's for |
+|---|---|
+| `Your design` | draw your character here |
+| `Guides` | landmark lines (soles, ankles, knees, crotch, hips, waist, chest, shoulders, neck, head, top of head), center lines, and which side is the character's left or right |
+| `Slot zones` (off) | the costume slot each area belongs to: head, chest + upper arms, gloves, hips + upper legs, boots. Designs split into pieces along these seams |
+| `Outline`, `Body` | the body's silhouette, slot seams and a shaded render |
+
+Draw over it and the drawing is already in the skeleton's coordinates: the matching `.json` records
+the scale, ground line, view centers, landmarks and bone positions, so it can be lined up in 3ds Max
+without manual fitting. Keep the character's proportions close to the body (the animations are built
+for it); costume pieces can extend past the silhouette freely. The templates are made from the
+installed client's art, so they're not in git.
+
+Note: CoH's coordinates are left-handed (characters face +Z with their left side at -X). Everything that
+leaves the game data for Max, OBJ or a preview negates X, or the model shows up mirrored.
+
 ## Weapon color masks (how shipped weapons do it)
 
 Surveyed from the client (`tricks/WEAPONS/CustomWeapons.txt` and the custom weapon models):

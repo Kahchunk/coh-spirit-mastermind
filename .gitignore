@@ -15,3 +15,4 @@ tools/photoshop/dist/
 art/work/.preview_request.txt*
 art/work/max_bridge.log
 art/work/.model_index.json
+art/templates/

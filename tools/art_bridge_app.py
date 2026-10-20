@@ -92,8 +92,10 @@ def render_views(model, size=PREVIEW, texture=None):
     """2x2 sheet (iso front, iso back, front, side), lit with the game's normals. CoH is Y-up, +Z forward.
     texture: (PIL color image, PIL mask or None) to paint the mesh with; the mask tints with the
     default preview colors, like a new part's part.json."""
-    v = np.array(model.verts, dtype=float)
-    n = np.array(model.norms, dtype=float) if model.norms else None
+    # Negate X: CoH data is left-handed (see geo.write_obj); otherwise the preview is mirrored.
+    flip = np.array([-1.0, 1.0, 1.0])
+    v = np.array(model.verts, dtype=float) * flip
+    n = np.array(model.norms, dtype=float) * flip if model.norms else None
     tris = np.array(model.tris, dtype=int)
     v -= (v.min(0) + v.max(0)) / 2
     radius = np.linalg.norm(v, axis=1).max() or 1.0

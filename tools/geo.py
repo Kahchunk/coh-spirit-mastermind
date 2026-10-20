@@ -160,7 +160,11 @@ def parse_geo(data, decode=True):
 def write_obj(models, path, include=lambda m: True, normals=True):
     """normals=False writes one smoothing group instead of explicit normals. CoH meshes split
     vertices at hard edges, so that reproduces the game's shading in apps (3ds Max's OBJ
-    importer) that mishandle imported normals."""
+    importer) that mishandle imported normals.
+
+    CoH data is left-handed (characters face +Z with their left side at -X) and OBJ is
+    right-handed, so X is negated and each triangle's winding reversed. Without this every model
+    shows up mirrored (verified: the PPD car's roof lettering read backwards)."""
     with open(path, "w", encoding="utf-8") as f:
         f.write("# exported from CoH .geo for reference\n")
         vo = to = no = 1
@@ -169,16 +173,16 @@ def write_obj(models, path, include=lambda m: True, normals=True):
                 continue
             f.write(f"o {m.name}\n")
             for x, y, z in m.verts:
-                f.write(f"v {x:.6f} {y:.6f} {z:.6f}\n")
+                f.write(f"v {-x:.6f} {y:.6f} {z:.6f}\n")
             for u, v in m.sts:
                 # CoH st.v already runs bottom-up like OBJ; verified on the Croatoa Spirit face.
                 f.write(f"vt {u:.6f} {v:.6f}\n")
             for x, y, z in (m.norms if normals else []):
-                f.write(f"vn {x:.6f} {y:.6f} {z:.6f}\n")
+                f.write(f"vn {-x:.6f} {y:.6f} {z:.6f}\n")
             has_t, has_n = bool(m.sts), bool(m.norms) and normals
             if not normals:
                 f.write("s 1\n")
-            for a, b, c in m.tris:
+            for a, c, b in m.tris:  # reversed winding, to match the X flip
                 idx = []
                 for i in (a, b, c):
                     s = f"{i + vo}"
