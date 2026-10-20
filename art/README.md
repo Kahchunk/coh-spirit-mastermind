@@ -117,8 +117,9 @@ Each original PSD keeps every map for one part in named layer groups: visible la
    (Flat / Lit / Ghostly / Croatoa dusk) and Color1/Color2, with a "Use foreground" button for each.
    Max still writes the 8-angle `sheet.png`, which the Art Bridge app uses as the part's preview.
 
-Install the panel once: run `python tools/photoshop/package_plugin.py`, then double-click
-`tools/photoshop/dist/coh-preview.ccx`. If Creative Cloud refuses an unsigned plugin, load
+Install or update the panel: quit Photoshop, then run `python tools/photoshop/package_plugin.py --install`.
+It removes any installed copy first. Installing a new version alongside an old one leaves both, and
+Photoshop keeps loading the old one. If Creative Cloud refuses an unsigned plugin, load
 `tools/photoshop/coh-preview/manifest.json` with Adobe's **UXP Developer Tool** (Add Plugin > Load).
 
 The looks are approximations: the Spirit glow comes from the game effect `Ghost_Ship_Enemies.fx`
