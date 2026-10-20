@@ -4,11 +4,16 @@
 <style>
   body { margin: 0; padding: 8px; color: #ddd; background: transparent; font-size: 12px; }
   #status { color: #9aa; margin-bottom: 6px; min-height: 16px; }
-  #stage { position: relative; width: 100%; border-radius: 4px; overflow: hidden; background: #26282c; cursor: grab; }
-  #view { width: 100%; display: block; }
-  #empty { padding: 40px 12px; text-align: center; color: #7f8a92; }
+  #stage { position: relative; width: 100%; height: 240px; border-radius: 4px; overflow: hidden; background: #333333; cursor: grab; }
+  #stage img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; visibility: hidden; }
+  #empty { position: absolute; left: 0; right: 0; top: 40%; text-align: center; color: #7f8a92; padding: 0 12px; }
+  #zoomTools { position: absolute; right: 6px; top: 6px; display: flex; flex-direction: column; gap: 4px; }
+  #zoomTools button { width: 30px; height: 26px; padding: 0; font-size: 15px; font-weight: bold; }
+  #zoomTools #zoomFit { font-size: 10px; font-weight: normal; }
   .row { display: flex; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
   .views button { padding: 2px 8px; }
+  #zoom { flex: 1; min-width: 80px; }
+  #zoomLabel { width: 34px; text-align: right; color: #9aa; }
   .swatch { width: 22px; height: 22px; border-radius: 3px; border: 1px solid #555; }
   input.hex { width: 74px; }
   label { min-width: 52px; }
@@ -18,8 +23,19 @@
 <body>
   <div id="status">Open a part's .psd from art\work</div>
   <div id="stage">
-    <img id="view" />
-    <div id="empty">Drag to rotate. Scroll or use - / + to zoom.</div>
+    <img id="viewA" />
+    <img id="viewB" />
+    <div id="empty">Drag to rotate. Zoom with the buttons, the slider, or the scroll wheel.</div>
+    <div id="zoomTools">
+      <button id="zoomIn" title="Zoom in">+</button>
+      <button id="zoomOut" title="Zoom out">&minus;</button>
+      <button id="zoomFit" title="Fit the whole model">Fit</button>
+    </div>
+  </div>
+  <div class="row">
+    <label>Zoom</label>
+    <input type="range" id="zoom" min="0" max="100" step="1" />
+    <span id="zoomLabel">1.0x</span>
   </div>
   <div class="row views">
     <button data-yaw="35" data-pitch="25">Iso</button>
@@ -29,8 +45,6 @@
     <button data-yaw="270" data-pitch="0">Left</button>
     <button data-yaw="0" data-pitch="89">Top</button>
     <button data-yaw="0" data-pitch="-89">Bottom</button>
-    <button id="zoomOut">-</button>
-    <button id="zoomIn">+</button>
   </div>
   <div id="controls">
     <div class="row">
@@ -52,7 +66,7 @@
       <input class="hex" id="c2" />
       <button id="fg2">Use foreground</button>
     </div>
-    <div class="hint">Mask black = Color1, white = Color2. 3ds Max re-renders the view when you rotate and each time you save (Ctrl+S). Keep the CoH Art Bridge app open.</div>
+    <div class="hint">Mask black = Color1, white = Color2. 3ds Max re-renders the view as you rotate (quick drafts while dragging, a sharp frame when you stop) and each time you save (Ctrl+S). Keep the CoH Art Bridge app open.</div>
   </div>
   <script src="index.js"></script>
 </body>

@@ -240,12 +240,14 @@ fn cohSceneBounds =
 	bb
 )
 
--- Orbit = #(yaw, pitch, zoom) from the panel's .preview/orbit.txt. Yaw 0 looks at the front (from -Y).
+-- Orbit = #(yaw, pitch, zoom, draft) from the panel's .preview/orbit.txt. Yaw 0 looks at the
+-- front (from -Y). draft is true while the panel is dragging: smaller, faster frames.
 fn cohReadOrbit req =
 (
 	local o = cohReadRequest ((getFilenamePath (cohGet req "sheet" "")) + "orbit.txt")
-	if o == undefined then return #(35.0, 25.0, 1.0)
-	#((cohGet o "yaw" "35") as float, (cohGet o "pitch" "25") as float, (cohGet o "zoom" "1") as float)
+	if o == undefined then return #(35.0, 25.0, 1.0, false)
+	#((cohGet o "yaw" "35") as float, (cohGet o "pitch" "25") as float, (cohGet o "zoom" "1") as float,
+	  (cohGet o "quality" "final") == "draft")
 )
 
 -- Overlays (grid, ViewCube, viewport labels, light icons) would end up in the captured view.
@@ -263,7 +265,10 @@ fn cohCleanViewport =
 -- cropped to a centered square (which also drops the axis tripod in the corner).
 fn cohRenderView st req orbit =
 (
-	local out = (getFilenamePath (cohGet req "sheet" "")) + "view.png"
+	-- Always published as view.frame (JPEG for drafts, PNG for final frames; the panel sniffs which).
+	local out = (getFilenamePath (cohGet req "sheet" "")) + "view.frame"
+	local draft = orbit[4]
+	local tmp = out + (if draft then ".tmp.jpg" else ".tmp.png")
 	local bb = cohSceneBounds()
 	if bb == undefined then return false
 	local center = (bb[1] + bb[2]) / 2.0
@@ -290,7 +295,11 @@ fn cohRenderView st req orbit =
 	if (cohMaxMinimized()) or w < 128 or h < 128 then
 	(
 		st.viewCam.fov = 2.0 * atan ((radius * 1.08 / zoom) / dist)
-		sq = render camera:st.viewCam outputSize:[640, 640] vfb:false
+		local size = if draft then 360 else 720
+		local aa = try (renderers.current.antiAliasing) catch (undefined)
+		if draft and aa != undefined do renderers.current.antiAliasing = false
+		sq = render camera:st.viewCam outputSize:[size, size] vfb:false
+		if aa != undefined do renderers.current.antiAliasing = aa
 	)
 	else
 	(
@@ -303,11 +312,11 @@ fn cohRenderView st req orbit =
 		pasteBitmap dib sq (box2 ((dib.width - side) / 2) ((dib.height - side) / 2) side side) [0, 0]
 		close dib
 	)
-	sq.filename = out + ".tmp.png"
-	save sq
+	sq.filename = tmp
+	save sq quiet:true
 	close sq
 	if doesFileExist out do deleteFile out
-	renameFile (out + ".tmp.png") out
+	renameFile tmp out
 	true
 )
 
@@ -445,7 +454,7 @@ fn cohTick =
 	local me = getSourceFileName()
 	cohBridge = CohBridgeState requestPath:(root + "art\\work\\.preview_request.txt") scriptPath:me scriptStamp:(getFileModDate me)
 	local t = dotNetObject "System.Windows.Forms.Timer"
-	t.Interval = 120
+	t.Interval = 50
 	dotNet.addEventHandler t "Tick" (fn onTick s e = cohTick())
 	cohBridge.timer = t
 	t.Start()

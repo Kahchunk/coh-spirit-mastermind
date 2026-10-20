@@ -1,0 +1,8 @@
+{
+  "color1": "#b0d8ff",
+  "color2": "#2a6f8f",
+  "source": {
+    "game": "player_library/Summon_Demons_Chest.geo",
+    "mesh": "GEO_Chest_Demon_02"
+  }
+}
